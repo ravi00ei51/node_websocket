@@ -1,10 +1,11 @@
+const port = process.env.PORT || 3000;
 const http = require('http')
 const express = require('express')
 
 const app = express();
 const server = http.createServer(app)
 
-server.listen(1337, function(){
+server.listen(port, function(){
     console.log('Server Running');
 })
 
