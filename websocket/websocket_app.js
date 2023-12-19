@@ -6,7 +6,7 @@ const app = express();
 const server = http.createServer(app)
 
 server.listen(port, function(){
-    console.log('Server Running');
+    console.log('Server Running '+ port);
 })
 
 const websocket = require('ws')
