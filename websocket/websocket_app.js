@@ -21,4 +21,8 @@ wss.on('connection', function (ws) {
         ws.send('Thanks for sending ' + data);
         console.log('New message: ' + data);
     })
+    ws.on('close', (code, message) => {
+       console.log(' Close connection:: ', code);
+       ws.close(done);
+     });
 })
