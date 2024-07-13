@@ -18,7 +18,7 @@ wss.on('connection', function (ws) {
     console.log('new connection')
 
     ws.on('message', function (data) {
-        console.log('New type message : ' + data.data);
+        console.log('New type message : ' + typeof(data));
         console.log('ws type message : ' + ws.binaryType );
         if(data.type === 'utf8') {
             ws.send('Thanks for sending text' + data);
