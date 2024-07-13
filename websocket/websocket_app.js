@@ -18,10 +18,10 @@ wss.on('connection', function (ws) {
     console.log('new connection')
 
     ws.on('message', function (data) {
-        if(message.type === 'utf8') {
+        if(data.type === 'utf8') {
             ws.send('Thanks for sending text' + data);
             console.log('New text message: ' + data);
-        } else if(message.type === 'binary') {
+        } else if(data.type === 'binary') {
             ws.send('Thanks for sending binary' + data);
             console.log('New binary message: ' + data);
         }
