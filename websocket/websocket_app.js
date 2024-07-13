@@ -25,7 +25,7 @@ wss.on('connection', function (ws) {
             console.log('New text message: ' + data);
         } else if(data.length === 10) {
             ws.send('Thanks for sending binary' + data);
-            console.log('New binary message: ' + data);
+            console.log('New binary message: ' + data.toString('hex'));
         }
     })
     ws.on('close', (code, message) => {
