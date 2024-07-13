@@ -18,11 +18,16 @@ wss.on('connection', function (ws) {
     console.log('new connection')
 
     ws.on('message', function (data) {
-        ws.send('Thanks for sending ' + data);
-        console.log('New message: ' + data);
+        if(message.type === 'utf8') {
+            ws.send('Thanks for sending text' + data);
+            console.log('New text message: ' + data);
+        } else if(message.type === 'binary') {
+            ws.send('Thanks for sending binary' + data);
+            console.log('New binary message: ' + data);
+        }
     })
     ws.on('close', (code, message) => {
-       console.log(' Close connection:: ', code);
+       console.log('Close connection:: ', code);
        ws.close();
      });
 })
