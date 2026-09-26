@@ -2,16 +2,25 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Vehicle Telemetry Dashboard</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
-    <!-- Leaflet CSS -->
+    <title>
+        Vehicle Telemetry Dashboard
+    </title>
+
+
+    <!-- Leaflet -->
+
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
+
 
     <style>
 
@@ -19,195 +28,384 @@
             box-sizing: border-box;
         }
 
+
         body {
+
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #111827;
-            color: #f3f4f6;
+
+            font-family:
+                Arial,
+                sans-serif;
+
+            background:
+                #111827;
+
+            color:
+                #f3f4f6;
         }
+
 
         header {
-            background: #1f2937;
-            padding: 16px 24px;
 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background:
+                #1f2937;
 
-            border-bottom: 1px solid #374151;
+            padding:
+                16px 24px;
+
+            display:
+                flex;
+
+            justify-content:
+                space-between;
+
+            align-items:
+                center;
+
+            border-bottom:
+                1px solid #374151;
         }
+
 
         header h1 {
+
             margin: 0;
-            font-size: 22px;
+
+            font-size:
+                22px;
         }
+
 
         #connectionStatus {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
+
+            padding:
+                6px 12px;
+
+            border-radius:
+                6px;
+
+            font-size:
+                14px;
+
+            font-weight:
+                bold;
         }
+
 
         .connected {
-            background: #065f46;
-            color: #d1fae5;
+
+            background:
+                #065f46;
+
+            color:
+                #d1fae5;
         }
+
 
         .disconnected {
-            background: #7f1d1d;
-            color: #fee2e2;
+
+            background:
+                #7f1d1d;
+
+            color:
+                #fee2e2;
         }
+
 
         .connecting {
-            background: #78350f;
-            color: #fef3c7;
+
+            background:
+                #78350f;
+
+            color:
+                #fef3c7;
         }
 
-
-        /* Main page */
 
         .container {
-            padding: 20px;
+
+            padding:
+                20px;
         }
 
 
-        /* Telemetry cards */
+        /* ================================================= */
+        /* Telemetry cards                                   */
+        /* ================================================= */
+
 
         .telemetry-grid {
 
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
-                repeat(auto-fit, minmax(180px, 1fr));
+                repeat(
+                    auto-fit,
+                    minmax(180px, 1fr)
+                );
 
-            gap: 15px;
+            gap:
+                15px;
 
-            margin-bottom: 20px;
+            margin-bottom:
+                20px;
         }
+
 
         .card {
 
-            background: #1f2937;
+            background:
+                #1f2937;
 
-            padding: 18px;
+            padding:
+                18px;
 
-            border-radius: 10px;
+            border-radius:
+                10px;
 
-            border: 1px solid #374151;
+            border:
+                1px solid #374151;
         }
+
 
         .card-title {
 
-            color: #9ca3af;
+            color:
+                #9ca3af;
 
-            font-size: 13px;
+            font-size:
+                13px;
 
-            margin-bottom: 8px;
+            margin-bottom:
+                8px;
         }
+
 
         .card-value {
 
-            font-size: 28px;
+            font-size:
+                28px;
 
-            font-weight: bold;
+            font-weight:
+                bold;
         }
+
 
         .unit {
 
-            font-size: 14px;
+            font-size:
+                14px;
 
-            color: #9ca3af;
+            color:
+                #9ca3af;
         }
 
 
-        /* Map */
+        /* ================================================= */
+        /* Map                                               */
+        /* ================================================= */
+
 
         .map-container {
 
-            background: #1f2937;
+            background:
+                #1f2937;
 
-            border-radius: 10px;
+            border-radius:
+                10px;
 
-            padding: 10px;
+            padding:
+                10px;
 
-            border: 1px solid #374151;
+            border:
+                1px solid #374151;
 
-            margin-bottom: 20px;
+            margin-bottom:
+                20px;
         }
+
 
         #map {
 
-            height: 450px;
+            height:
+                400px;
 
-            border-radius: 8px;
+            border-radius:
+                8px;
         }
 
 
-        /* Information section */
+        /* ================================================= */
+        /* Object table                                      */
+        /* ================================================= */
+
+
+        .object-container {
+
+            background:
+                #1f2937;
+
+            border:
+                1px solid #374151;
+
+            border-radius:
+                10px;
+
+            padding:
+                15px;
+
+            margin-bottom:
+                20px;
+
+            overflow-x:
+                auto;
+        }
+
+
+        .object-container h2 {
+
+            margin-top:
+                0;
+        }
+
+
+        table {
+
+            width:
+                100%;
+
+            border-collapse:
+                collapse;
+        }
+
+
+        th {
+
+            text-align:
+                left;
+
+            background:
+                #111827;
+
+            color:
+                #9ca3af;
+
+            padding:
+                10px;
+
+            border-bottom:
+                1px solid #374151;
+        }
+
+
+        td {
+
+            padding:
+                10px;
+
+            border-bottom:
+                1px solid #374151;
+        }
+
+
+        tr:last-child td {
+
+            border-bottom:
+                none;
+        }
+
+
+        .object-id {
+
+            font-weight:
+                bold;
+
+            color:
+                #93c5fd;
+        }
+
+
+        /* ================================================= */
+        /* Info                                              */
+        /* ================================================= */
+
 
         .info-panel {
 
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
 
-            gap: 10px;
+            gap:
+                10px;
 
-            background: #1f2937;
+            background:
+                #1f2937;
 
-            padding: 15px;
+            padding:
+                15px;
 
-            border-radius: 10px;
+            border-radius:
+                10px;
 
-            border: 1px solid #374151;
+            border:
+                1px solid #374151;
 
-            margin-bottom: 20px;
+            margin-bottom:
+                20px;
         }
 
-        .info-item {
-
-            font-size: 14px;
-        }
 
         .info-label {
 
-            color: #9ca3af;
+            color:
+                #9ca3af;
         }
 
 
-        /* Raw JSON */
+        /* ================================================= */
+        /* Raw JSON                                          */
+        /* ================================================= */
+
 
         .raw-container {
 
-            background: #1f2937;
+            background:
+                #1f2937;
 
-            border: 1px solid #374151;
+            border:
+                1px solid #374151;
 
-            border-radius: 10px;
+            border-radius:
+                10px;
 
-            padding: 15px;
+            padding:
+                15px;
         }
 
-        .raw-container h3 {
-
-            margin-top: 0;
-        }
 
         #rawTelemetry {
 
-            background: #030712;
+            background:
+                #030712;
 
-            padding: 15px;
+            padding:
+                15px;
 
-            border-radius: 6px;
+            border-radius:
+                6px;
 
-            overflow-x: auto;
+            overflow-x:
+                auto;
 
-            min-height: 100px;
-
-            color: #93c5fd;
+            color:
+                #93c5fd;
         }
 
     </style>
@@ -220,25 +418,49 @@
 
 <header>
 
-    <h1>Vehicle Telemetry Dashboard</h1>
+    <h1>
+        Vehicle Telemetry Dashboard
+    </h1>
+
 
     <div
         id="connectionStatus"
         class="disconnected">
+
         Disconnected
+
     </div>
 
 </header>
+
 
 
 <div class="container">
 
 
     <!-- ================================================= -->
-    <!-- Telemetry -->
+    <!-- Main telemetry                                    -->
     <!-- ================================================= -->
 
+
     <div class="telemetry-grid">
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Frame Number
+            </div>
+
+            <div class="card-value"
+                 id="frameNumber">
+
+                --
+
+            </div>
+
+        </div>
+
 
 
         <div class="card">
@@ -249,7 +471,9 @@
 
             <div class="card-value">
 
-                <span id="speed">--</span>
+                <span id="speed">
+                    --
+                </span>
 
                 <span class="unit">
                     km/h
@@ -260,61 +484,22 @@
         </div>
 
 
+
         <div class="card">
 
             <div class="card-title">
-                Heading
+                Detected Objects
             </div>
 
-            <div class="card-value">
+            <div class="card-value"
+                 id="objectCount">
 
-                <span id="heading">--</span>
-
-                <span class="unit">
-                    °
-                </span>
+                0
 
             </div>
 
         </div>
 
-
-        <div class="card">
-
-            <div class="card-title">
-                CPU Temperature
-            </div>
-
-            <div class="card-value">
-
-                <span id="cpuTemp">--</span>
-
-                <span class="unit">
-                    °C
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                GPU Temperature
-            </div>
-
-            <div class="card-value">
-
-                <span id="gpuTemp">--</span>
-
-                <span class="unit">
-                    °C
-                </span>
-
-            </div>
-
-        </div>
 
 
         <div class="card">
@@ -323,13 +508,15 @@
                 Latitude
             </div>
 
-            <div class="card-value">
+            <div class="card-value"
+                 id="latitude">
 
-                <span id="latitude">--</span>
+                --
 
             </div>
 
         </div>
+
 
 
         <div class="card">
@@ -338,9 +525,10 @@
                 Longitude
             </div>
 
-            <div class="card-value">
+            <div class="card-value"
+                 id="longitude">
 
-                <span id="longitude">--</span>
+                --
 
             </div>
 
@@ -352,8 +540,9 @@
 
 
     <!-- ================================================= -->
-    <!-- Map -->
+    <!-- Map                                               -->
     <!-- ================================================= -->
+
 
     <div class="map-container">
 
@@ -364,13 +553,75 @@
 
 
     <!-- ================================================= -->
-    <!-- Connection information -->
+    <!-- Detected objects                                  -->
     <!-- ================================================= -->
+
+
+    <div class="object-container">
+
+
+        <h2>
+            Detected Objects
+        </h2>
+
+
+        <table>
+
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Type</th>
+
+                    <th>X</th>
+
+                    <th>Y</th>
+
+                    <th>Width</th>
+
+                    <th>Height</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="objectTableBody">
+
+
+                <tr>
+
+                    <td colspan="6">
+
+                        Waiting for detections...
+
+                    </td>
+
+                </tr>
+
+
+            </tbody>
+
+
+        </table>
+
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- Connection information                            -->
+    <!-- ================================================= -->
+
 
     <div class="info-panel">
 
 
-        <div class="info-item">
+        <div>
 
             <span class="info-label">
                 Vehicle:
@@ -383,7 +634,7 @@
         </div>
 
 
-        <div class="info-item">
+        <div>
 
             <span class="info-label">
                 Last Update:
@@ -396,10 +647,10 @@
         </div>
 
 
-        <div class="info-item">
+        <div>
 
             <span class="info-label">
-                Messages:
+                Messages Received:
             </span>
 
             <span id="messageCount">
@@ -414,18 +665,20 @@
 
 
     <!-- ================================================= -->
-    <!-- Raw telemetry -->
+    <!-- Raw telemetry                                     -->
     <!-- ================================================= -->
+
 
     <div class="raw-container">
 
-        <h3>
-            Raw Telemetry
-        </h3>
 
-        <pre id="rawTelemetry">
-Waiting for telemetry...
-        </pre>
+        <h2>
+            Raw Telemetry
+        </h2>
+
+
+        <pre id="rawTelemetry">Waiting for telemetry...</pre>
+
 
     </div>
 
@@ -434,7 +687,6 @@ Waiting for telemetry...
 
 
 
-<!-- Leaflet -->
 <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 </script>
@@ -447,21 +699,9 @@ Waiting for telemetry...
 // Configuration
 // ============================================================
 
-const VEHICLE_ID = "vehicle_001";
+const VEHICLE_ID =
+    "vehicle_001";
 
-
-// Automatically select ws:// or wss://
-//
-// Local:
-// http://localhost:3000
-// becomes
-// ws://localhost:3000
-//
-// Render:
-// https://web-socket-9wz7.onrender.com
-// becomes
-// wss://web-socket-9wz7.onrender.com
-//
 
 const wsProtocol =
     window.location.protocol === "https:"
@@ -472,7 +712,7 @@ const wsProtocol =
 const WEBSOCKET_URL =
     `${wsProtocol}//${window.location.host}`;
 
-
+    
 
 // ============================================================
 // State
@@ -480,9 +720,9 @@ const WEBSOCKET_URL =
 
 let socket = null;
 
-let messageCount = 0;
-
 let reconnectTimer = null;
+
+let messageCount = 0;
 
 
 
@@ -490,20 +730,29 @@ let reconnectTimer = null;
 // Map
 // ============================================================
 
-const map = L.map("map").setView(
-    [54.7, -6.2],
-    10
-);
+const map =
+    L.map(
+        "map"
+    ).setView(
+        [54.7, -6.2],
+        10
+    );
 
 
 L.tileLayer(
+
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
     {
-        maxZoom: 19,
+
+        maxZoom:
+            19,
 
         attribution:
             "&copy; OpenStreetMap contributors"
+
     }
+
 ).addTo(map);
 
 
@@ -527,15 +776,19 @@ function setConnectionStatus(
             "connectionStatus"
         );
 
-    element.textContent = text;
 
-    element.className = className;
+    element.textContent =
+        text;
+
+
+    element.className =
+        className;
 }
 
 
 
 // ============================================================
-// Connect WebSocket
+// WebSocket connection
 // ============================================================
 
 function connectWebSocket() {
@@ -559,12 +812,6 @@ function connectWebSocket() {
     );
 
 
-    console.log(
-        "Connecting to:",
-        WEBSOCKET_URL
-    );
-
-
     socket =
         new WebSocket(
             WEBSOCKET_URL
@@ -579,28 +826,18 @@ function connectWebSocket() {
     socket.onopen = function () {
 
 
-        console.log(
-            "WebSocket connected"
-        );
-
-
-        // Send browser handshake
-
         const handshake = {
 
-            type: "handshake",
+            type:
+                "handshake",
 
-            role: "browser",
+            role:
+                "browser",
 
-            vehicleId: VEHICLE_ID
+            vehicleId:
+                VEHICLE_ID
 
         };
-
-
-        console.log(
-            "Sending handshake:",
-            handshake
-        );
 
 
         socket.send(
@@ -614,10 +851,12 @@ function connectWebSocket() {
 
 
     // --------------------------------------------------------
-    // Message
+    // Incoming message
     // --------------------------------------------------------
 
-    socket.onmessage = function (event) {
+    socket.onmessage = function (
+        event
+    ) {
 
 
         let data;
@@ -634,8 +873,8 @@ function connectWebSocket() {
         catch (error) {
 
             console.error(
-                "Invalid JSON received:",
-                event.data
+                "Invalid JSON",
+                error
             );
 
             return;
@@ -644,7 +883,7 @@ function connectWebSocket() {
 
 
         // ----------------------------------------------------
-        // Handshake ACK
+        // Handshake acknowledgement
         // ----------------------------------------------------
 
         if (
@@ -654,14 +893,9 @@ function connectWebSocket() {
 
 
             if (
-                data.status === "ok"
+                data.status ===
+                "ok"
             ) {
-
-                console.log(
-                    "Handshake successful:",
-                    data
-                );
-
 
                 setConnectionStatus(
                     "Connected",
@@ -676,10 +910,6 @@ function connectWebSocket() {
 
 
 
-        // ----------------------------------------------------
-        // Telemetry
-        // ----------------------------------------------------
-
         updateDashboard(
             data
         );
@@ -692,14 +922,7 @@ function connectWebSocket() {
     // Closed
     // --------------------------------------------------------
 
-    socket.onclose = function (event) {
-
-
-        console.log(
-            "WebSocket closed:",
-            event.code,
-            event.reason
-        );
+    socket.onclose = function () {
 
 
         setConnectionStatus(
@@ -707,8 +930,6 @@ function connectWebSocket() {
             "disconnected"
         );
 
-
-        // Reconnect after 3 seconds
 
         clearTimeout(
             reconnectTimer
@@ -729,8 +950,9 @@ function connectWebSocket() {
     // Error
     // --------------------------------------------------------
 
-    socket.onerror = function (error) {
-
+    socket.onerror = function (
+        error
+    ) {
 
         console.error(
             "WebSocket error:",
@@ -747,7 +969,9 @@ function connectWebSocket() {
 // Update dashboard
 // ============================================================
 
-function updateDashboard(data) {
+function updateDashboard(
+    data
+) {
 
 
     messageCount++;
@@ -761,7 +985,7 @@ function updateDashboard(data) {
 
 
     // --------------------------------------------------------
-    // Raw telemetry
+    // Raw JSON
     // --------------------------------------------------------
 
     document.getElementById(
@@ -776,76 +1000,38 @@ function updateDashboard(data) {
 
 
     // --------------------------------------------------------
-    // Vehicle data
+    // Frame number
     // --------------------------------------------------------
 
-    if (data.vehicle) {
+    if (
+        data.frameNumber !==
+        undefined
+    ) {
 
-
-        if (
-            data.vehicle.speed !== undefined
-        ) {
-
-            document.getElementById(
-                "speed"
-            ).textContent =
-                Number(
-                    data.vehicle.speed
-                ).toFixed(1);
-
-        }
-
-
-        if (
-            data.vehicle.heading !== undefined
-        ) {
-
-            document.getElementById(
-                "heading"
-            ).textContent =
-                Number(
-                    data.vehicle.heading
-                ).toFixed(1);
-
-        }
+        document.getElementById(
+            "frameNumber"
+        ).textContent =
+            data.frameNumber;
 
     }
 
 
 
     // --------------------------------------------------------
-    // System data
+    // Speed
     // --------------------------------------------------------
 
-    if (data.system) {
+    if (
+        data.speed !==
+        undefined
+    ) {
 
-
-        if (
-            data.system.cpuTemp !== undefined
-        ) {
-
-            document.getElementById(
-                "cpuTemp"
-            ).textContent =
-                Number(
-                    data.system.cpuTemp
-                ).toFixed(1);
-
-        }
-
-
-        if (
-            data.system.gpuTemp !== undefined
-        ) {
-
-            document.getElementById(
-                "gpuTemp"
-            ).textContent =
-                Number(
-                    data.system.gpuTemp
-                ).toFixed(1);
-
-        }
+        document.getElementById(
+            "speed"
+        ).textContent =
+            Number(
+                data.speed
+            ).toFixed(1);
 
     }
 
@@ -887,10 +1073,6 @@ function updateDashboard(data) {
 
 
 
-        // ----------------------------------------------------
-        // Create marker
-        // ----------------------------------------------------
-
         if (!vehicleMarker) {
 
 
@@ -900,7 +1082,9 @@ function updateDashboard(data) {
                         latitude,
                         longitude
                     ]
-                ).addTo(map);
+                ).addTo(
+                    map
+                );
 
 
             vehicleMarker.bindPopup(
@@ -923,11 +1107,9 @@ function updateDashboard(data) {
 
 
 
-        // ----------------------------------------------------
-        // Center map on first GPS position
-        // ----------------------------------------------------
-
-        if (firstPosition) {
+        if (
+            firstPosition
+        ) {
 
 
             map.setView(
@@ -949,17 +1131,134 @@ function updateDashboard(data) {
 
 
     // --------------------------------------------------------
-    // Last update
+    // Detected objects
     // --------------------------------------------------------
 
-    const now =
-        new Date();
+    updateDetectedObjects(
+        data.detectedObjects
+    );
 
+
+
+    // --------------------------------------------------------
+    // Last update
+    // --------------------------------------------------------
 
     document.getElementById(
         "lastUpdate"
     ).textContent =
-        now.toLocaleTimeString();
+        new Date()
+            .toLocaleTimeString();
+
+}
+
+
+
+// ============================================================
+// Detected object table
+// ============================================================
+
+function updateDetectedObjects(
+    objects
+) {
+
+
+    const tableBody =
+        document.getElementById(
+            "objectTableBody"
+        );
+
+
+    tableBody.innerHTML =
+        "";
+
+
+    if (
+        !Array.isArray(objects) ||
+        objects.length === 0
+    ) {
+
+
+        document.getElementById(
+            "objectCount"
+        ).textContent =
+            "0";
+
+
+        const row =
+            document.createElement(
+                "tr"
+            );
+
+
+        row.innerHTML =
+            `<td colspan="6">
+                No objects detected
+             </td>`;
+
+
+        tableBody.appendChild(
+            row
+        );
+
+
+        return;
+    }
+
+
+
+    document.getElementById(
+        "objectCount"
+    ).textContent =
+        objects.length;
+
+
+
+    objects.forEach(
+        function (object) {
+
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            row.innerHTML = `
+
+                <td class="object-id">
+                    ${object.id ?? "--"}
+                </td>
+
+                <td>
+                    ${object.type ?? "--"}
+                </td>
+
+                <td>
+                    ${object.x ?? "--"}
+                </td>
+
+                <td>
+                    ${object.y ?? "--"}
+                </td>
+
+                <td>
+                    ${object.width ?? "--"}
+                </td>
+
+                <td>
+                    ${object.height ?? "--"}
+                </td>
+
+            `;
+
+
+            tableBody.appendChild(
+                row
+            );
+
+        }
+    );
 
 }
 
