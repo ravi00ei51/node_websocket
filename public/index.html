@@ -7,14 +7,17 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0">
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
         Vehicle Telemetry Dashboard
     </title>
 
 
-    <!-- Leaflet -->
+    <!-- =====================================================
+         Leaflet map CSS
+         ===================================================== -->
 
     <link
         rel="stylesheet"
@@ -22,393 +25,14 @@
     />
 
 
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-
-        body {
-
-            margin: 0;
-
-            font-family:
-                Arial,
-                sans-serif;
-
-            background:
-                #111827;
-
-            color:
-                #f3f4f6;
-        }
-
-
-        header {
-
-            background:
-                #1f2937;
-
-            padding:
-                16px 24px;
-
-            display:
-                flex;
-
-            justify-content:
-                space-between;
-
-            align-items:
-                center;
-
-            border-bottom:
-                1px solid #374151;
-        }
-
-
-        header h1 {
-
-            margin: 0;
-
-            font-size:
-                22px;
-        }
-
-
-        #connectionStatus {
-
-            padding:
-                6px 12px;
-
-            border-radius:
-                6px;
-
-            font-size:
-                14px;
-
-            font-weight:
-                bold;
-        }
-
-
-        .connected {
-
-            background:
-                #065f46;
-
-            color:
-                #d1fae5;
-        }
-
-
-        .disconnected {
-
-            background:
-                #7f1d1d;
-
-            color:
-                #fee2e2;
-        }
-
-
-        .connecting {
-
-            background:
-                #78350f;
-
-            color:
-                #fef3c7;
-        }
-
-
-        .container {
-
-            padding:
-                20px;
-        }
-
-
-        /* ================================================= */
-        /* Telemetry cards                                   */
-        /* ================================================= */
-
-
-        .telemetry-grid {
-
-            display:
-                grid;
-
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(180px, 1fr)
-                );
-
-            gap:
-                15px;
-
-            margin-bottom:
-                20px;
-        }
-
-
-        .card {
-
-            background:
-                #1f2937;
-
-            padding:
-                18px;
-
-            border-radius:
-                10px;
-
-            border:
-                1px solid #374151;
-        }
-
-
-        .card-title {
-
-            color:
-                #9ca3af;
-
-            font-size:
-                13px;
-
-            margin-bottom:
-                8px;
-        }
-
-
-        .card-value {
-
-            font-size:
-                28px;
-
-            font-weight:
-                bold;
-        }
-
-
-        .unit {
-
-            font-size:
-                14px;
-
-            color:
-                #9ca3af;
-        }
-
-
-        /* ================================================= */
-        /* Map                                               */
-        /* ================================================= */
-
-
-        .map-container {
-
-            background:
-                #1f2937;
-
-            border-radius:
-                10px;
-
-            padding:
-                10px;
-
-            border:
-                1px solid #374151;
-
-            margin-bottom:
-                20px;
-        }
-
-
-        #map {
-
-            height:
-                400px;
-
-            border-radius:
-                8px;
-        }
-
-
-        /* ================================================= */
-        /* Object table                                      */
-        /* ================================================= */
-
-
-        .object-container {
-
-            background:
-                #1f2937;
-
-            border:
-                1px solid #374151;
-
-            border-radius:
-                10px;
-
-            padding:
-                15px;
-
-            margin-bottom:
-                20px;
-
-            overflow-x:
-                auto;
-        }
-
-
-        .object-container h2 {
-
-            margin-top:
-                0;
-        }
-
-
-        table {
-
-            width:
-                100%;
-
-            border-collapse:
-                collapse;
-        }
-
-
-        th {
-
-            text-align:
-                left;
-
-            background:
-                #111827;
-
-            color:
-                #9ca3af;
-
-            padding:
-                10px;
-
-            border-bottom:
-                1px solid #374151;
-        }
-
-
-        td {
-
-            padding:
-                10px;
-
-            border-bottom:
-                1px solid #374151;
-        }
-
-
-        tr:last-child td {
-
-            border-bottom:
-                none;
-        }
-
-
-        .object-id {
-
-            font-weight:
-                bold;
-
-            color:
-                #93c5fd;
-        }
-
-
-        /* ================================================= */
-        /* Info                                              */
-        /* ================================================= */
-
-
-        .info-panel {
-
-            display:
-                grid;
-
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(220px, 1fr)
-                );
-
-            gap:
-                10px;
-
-            background:
-                #1f2937;
-
-            padding:
-                15px;
-
-            border-radius:
-                10px;
-
-            border:
-                1px solid #374151;
-
-            margin-bottom:
-                20px;
-        }
-
-
-        .info-label {
-
-            color:
-                #9ca3af;
-        }
-
-
-        /* ================================================= */
-        /* Raw JSON                                          */
-        /* ================================================= */
-
-
-        .raw-container {
-
-            background:
-                #1f2937;
-
-            border:
-                1px solid #374151;
-
-            border-radius:
-                10px;
-
-            padding:
-                15px;
-        }
-
-
-        #rawTelemetry {
-
-            background:
-                #030712;
-
-            padding:
-                15px;
-
-            border-radius:
-                6px;
-
-            overflow-x:
-                auto;
-
-            color:
-                #93c5fd;
-        }
-
-    </style>
+    <!-- =====================================================
+         Our dashboard CSS
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
 
 </head>
 
@@ -416,16 +40,29 @@
 <body>
 
 
+<!-- =========================================================
+     Header
+     ========================================================= -->
+
 <header>
 
-    <h1>
-        Vehicle Telemetry Dashboard
-    </h1>
+    <div>
+
+        <h1>
+            Vehicle Telemetry Dashboard
+        </h1>
+
+        <div class="header-subtitle">
+            Live Vehicle Monitoring
+        </div>
+
+    </div>
 
 
     <div
         id="connectionStatus"
-        class="disconnected">
+        class="status disconnected"
+    >
 
         Disconnected
 
@@ -435,16 +72,21 @@
 
 
 
-<div class="container">
+<!-- =========================================================
+     Main page
+     ========================================================= -->
+
+<main class="container">
 
 
-    <!-- ================================================= -->
-    <!-- Main telemetry                                    -->
-    <!-- ================================================= -->
+    <!-- =====================================================
+         Telemetry summary cards
+         ===================================================== -->
+
+    <section class="telemetry-grid">
 
 
-    <div class="telemetry-grid">
-
+        <!-- Frame Number -->
 
         <div class="card">
 
@@ -452,16 +94,18 @@
                 Frame Number
             </div>
 
-            <div class="card-value"
-                 id="frameNumber">
-
+            <div
+                id="frameNumber"
+                class="card-value"
+            >
                 --
-
             </div>
 
         </div>
 
 
+
+        <!-- Speed -->
 
         <div class="card">
 
@@ -485,22 +129,7 @@
 
 
 
-        <div class="card">
-
-            <div class="card-title">
-                Detected Objects
-            </div>
-
-            <div class="card-value"
-                 id="objectCount">
-
-                0
-
-            </div>
-
-        </div>
-
-
+        <!-- Latitude -->
 
         <div class="card">
 
@@ -508,16 +137,18 @@
                 Latitude
             </div>
 
-            <div class="card-value"
-                 id="latitude">
-
+            <div
+                id="latitude"
+                class="card-value coordinate-value"
+            >
                 --
-
             </div>
 
         </div>
 
 
+
+        <!-- Longitude -->
 
         <div class="card">
 
@@ -525,103 +156,129 @@
                 Longitude
             </div>
 
-            <div class="card-value"
-                 id="longitude">
-
+            <div
+                id="longitude"
+                class="card-value coordinate-value"
+            >
                 --
+            </div>
+
+        </div>
+
+
+
+        <!-- Number of detected objects -->
+
+        <div class="card">
+
+            <div class="card-title">
+                Detected Objects
+            </div>
+
+            <div
+                id="objectCount"
+                class="card-value"
+            >
+                0
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         Map + Detected Objects
+         ===================================================== -->
+
+    <section class="main-display">
+
+
+        <!-- =================================================
+             Map
+             ================================================= -->
+
+        <div class="map-panel">
+
+            <div class="panel-header">
+
+                <span>
+                    Vehicle Location
+                </span>
+
+            </div>
+
+
+            <div class="map-content">
+
+                <div id="map"></div>
 
             </div>
 
         </div>
 
 
-    </div>
+
+        <!-- =================================================
+             Detected Objects
+             ================================================= -->
+
+        <div class="object-panel">
+
+
+            <div class="object-panel-header">
+
+                <span>
+                    Detected Objects
+                </span>
+
+
+                <span
+                    id="objectPanelCount"
+                    class="object-count-badge"
+                >
+                    0
+                </span>
+
+            </div>
 
 
 
-    <!-- ================================================= -->
-    <!-- Map                                               -->
-    <!-- ================================================= -->
+            <!--
+                This part scrolls when there are many objects.
+            -->
+
+            <div
+                id="objectList"
+                class="object-list"
+            >
+
+                <div class="no-objects">
+
+                    Waiting for detections...
+
+                </div>
+
+            </div>
 
 
-    <div class="map-container">
-
-        <div id="map"></div>
-
-    </div>
+        </div>
 
 
-
-    <!-- ================================================= -->
-    <!-- Detected objects                                  -->
-    <!-- ================================================= -->
-
-
-    <div class="object-container">
-
-
-        <h2>
-            Detected Objects
-        </h2>
-
-
-        <table>
-
-
-            <thead>
-
-                <tr>
-
-                    <th>ID</th>
-
-                    <th>Type</th>
-
-                    <th>X</th>
-
-                    <th>Y</th>
-
-                    <th>Width</th>
-
-                    <th>Height</th>
-
-                </tr>
-
-            </thead>
-
-
-            <tbody id="objectTableBody">
-
-
-                <tr>
-
-                    <td colspan="6">
-
-                        Waiting for detections...
-
-                    </td>
-
-                </tr>
-
-
-            </tbody>
-
-
-        </table>
-
-
-    </div>
+    </section>
 
 
 
-    <!-- ================================================= -->
-    <!-- Connection information                            -->
-    <!-- ================================================= -->
+    <!-- =====================================================
+         Connection information
+         ===================================================== -->
+
+    <section class="info-panel">
 
 
-    <div class="info-panel">
-
-
-        <div>
+        <div class="info-item">
 
             <span class="info-label">
                 Vehicle:
@@ -634,7 +291,8 @@
         </div>
 
 
-        <div>
+
+        <div class="info-item">
 
             <span class="info-label">
                 Last Update:
@@ -647,7 +305,8 @@
         </div>
 
 
-        <div>
+
+        <div class="info-item">
 
             <span class="info-label">
                 Messages Received:
@@ -660,36 +319,42 @@
         </div>
 
 
-    </div>
+    </section>
 
 
 
-    <!-- ================================================= -->
-    <!-- Raw telemetry                                     -->
-    <!-- ================================================= -->
+    <!-- =====================================================
+         Raw JSON
+         ===================================================== -->
+
+    <section class="raw-container">
 
 
-    <div class="raw-container">
+        <div class="panel-header">
 
-
-        <h2>
             Raw Telemetry
-        </h2>
+
+        </div>
 
 
         <pre id="rawTelemetry">Waiting for telemetry...</pre>
 
 
-    </div>
+    </section>
 
 
-</div>
+</main>
 
 
+
+<!-- =========================================================
+     Leaflet JavaScript
+     ========================================================= -->
 
 <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
 
 
 <script>
@@ -699,9 +364,23 @@
 // Configuration
 // ============================================================
 
-const VEHICLE_ID =
-    "vehicle_001";
+const VEHICLE_ID = "vehicle_001";
 
+
+// Determine WebSocket protocol automatically.
+//
+// Render:
+//
+// https://...
+// becomes
+// wss://...
+//
+// Local:
+//
+// http://localhost:3000
+// becomes
+// ws://localhost:3000
+//
 
 const wsProtocol =
     window.location.protocol === "https:"
@@ -745,8 +424,7 @@ L.tileLayer(
 
     {
 
-        maxZoom:
-            19,
+        maxZoom: 19,
 
         attribution:
             "&copy; OpenStreetMap contributors"
@@ -782,13 +460,13 @@ function setConnectionStatus(
 
 
     element.className =
-        className;
+        `status ${className}`;
 }
 
 
 
 // ============================================================
-// WebSocket connection
+// Connect WebSocket
 // ============================================================
 
 function connectWebSocket() {
@@ -812,6 +490,12 @@ function connectWebSocket() {
     );
 
 
+    console.log(
+        "Connecting to:",
+        WEBSOCKET_URL
+    );
+
+
     socket =
         new WebSocket(
             WEBSOCKET_URL
@@ -824,6 +508,11 @@ function connectWebSocket() {
     // --------------------------------------------------------
 
     socket.onopen = function () {
+
+
+        console.log(
+            "WebSocket connected"
+        );
 
 
         const handshake = {
@@ -840,6 +529,12 @@ function connectWebSocket() {
         };
 
 
+        console.log(
+            "Sending browser handshake:",
+            handshake
+        );
+
+
         socket.send(
             JSON.stringify(
                 handshake
@@ -851,7 +546,7 @@ function connectWebSocket() {
 
 
     // --------------------------------------------------------
-    // Incoming message
+    // Message received
     // --------------------------------------------------------
 
     socket.onmessage = function (
@@ -873,8 +568,8 @@ function connectWebSocket() {
         catch (error) {
 
             console.error(
-                "Invalid JSON",
-                error
+                "Invalid JSON received:",
+                event.data
             );
 
             return;
@@ -897,6 +592,12 @@ function connectWebSocket() {
                 "ok"
             ) {
 
+                console.log(
+                    "Handshake successful:",
+                    data
+                );
+
+
                 setConnectionStatus(
                     "Connected",
                     "connected"
@@ -910,6 +611,10 @@ function connectWebSocket() {
 
 
 
+        // ----------------------------------------------------
+        // Telemetry
+        // ----------------------------------------------------
+
         updateDashboard(
             data
         );
@@ -919,10 +624,19 @@ function connectWebSocket() {
 
 
     // --------------------------------------------------------
-    // Closed
+    // Connection closed
     // --------------------------------------------------------
 
-    socket.onclose = function () {
+    socket.onclose = function (
+        event
+    ) {
+
+
+        console.log(
+            "WebSocket closed:",
+            event.code,
+            event.reason
+        );
 
 
         setConnectionStatus(
@@ -974,6 +688,10 @@ function updateDashboard(
 ) {
 
 
+    // --------------------------------------------------------
+    // Message counter
+    // --------------------------------------------------------
+
     messageCount++;
 
 
@@ -1004,8 +722,7 @@ function updateDashboard(
     // --------------------------------------------------------
 
     if (
-        data.frameNumber !==
-        undefined
+        data.frameNumber !== undefined
     ) {
 
         document.getElementById(
@@ -1022,8 +739,7 @@ function updateDashboard(
     // --------------------------------------------------------
 
     if (
-        data.speed !==
-        undefined
+        data.speed !== undefined
     ) {
 
         document.getElementById(
@@ -1073,6 +789,10 @@ function updateDashboard(
 
 
 
+        // ----------------------------------------------------
+        // Create/update vehicle marker
+        // ----------------------------------------------------
+
         if (!vehicleMarker) {
 
 
@@ -1106,6 +826,10 @@ function updateDashboard(
         }
 
 
+
+        // ----------------------------------------------------
+        // Center map only on first GPS position
+        // ----------------------------------------------------
 
         if (
             firstPosition
@@ -1141,7 +865,7 @@ function updateDashboard(
 
 
     // --------------------------------------------------------
-    // Last update
+    // Last update time
     // --------------------------------------------------------
 
     document.getElementById(
@@ -1155,7 +879,7 @@ function updateDashboard(
 
 
 // ============================================================
-// Detected object table
+// Update detected object list
 // ============================================================
 
 function updateDetectedObjects(
@@ -1163,15 +887,33 @@ function updateDetectedObjects(
 ) {
 
 
-    const tableBody =
+    const objectList =
         document.getElementById(
-            "objectTableBody"
+            "objectList"
         );
 
 
-    tableBody.innerHTML =
-        "";
+    const objectCount =
+        document.getElementById(
+            "objectCount"
+        );
 
+
+    const objectPanelCount =
+        document.getElementById(
+            "objectPanelCount"
+        );
+
+
+    // Remove objects from previous frame
+
+    objectList.innerHTML = "";
+
+
+
+    // --------------------------------------------------------
+    // No objects detected
+    // --------------------------------------------------------
 
     if (
         !Array.isArray(objects) ||
@@ -1179,26 +921,30 @@ function updateDetectedObjects(
     ) {
 
 
-        document.getElementById(
-            "objectCount"
-        ).textContent =
+        objectCount.textContent =
             "0";
 
 
-        const row =
+        objectPanelCount.textContent =
+            "0";
+
+
+        const emptyMessage =
             document.createElement(
-                "tr"
+                "div"
             );
 
 
-        row.innerHTML =
-            `<td colspan="6">
-                No objects detected
-             </td>`;
+        emptyMessage.className =
+            "no-objects";
 
 
-        tableBody.appendChild(
-            row
+        emptyMessage.textContent =
+            "No objects detected";
+
+
+        objectList.appendChild(
+            emptyMessage
         );
 
 
@@ -1207,59 +953,203 @@ function updateDetectedObjects(
 
 
 
-    document.getElementById(
-        "objectCount"
-    ).textContent =
+    // --------------------------------------------------------
+    // Number of objects
+    // --------------------------------------------------------
+
+    objectCount.textContent =
         objects.length;
 
 
+    objectPanelCount.textContent =
+        objects.length;
+
+
+
+    // --------------------------------------------------------
+    // Add each object
+    // --------------------------------------------------------
 
     objects.forEach(
         function (object) {
 
 
-            const row =
+            const item =
                 document.createElement(
-                    "tr"
+                    "div"
                 );
 
 
-            row.innerHTML = `
-
-                <td class="object-id">
-                    ${object.id ?? "--"}
-                </td>
-
-                <td>
-                    ${object.type ?? "--"}
-                </td>
-
-                <td>
-                    ${object.x ?? "--"}
-                </td>
-
-                <td>
-                    ${object.y ?? "--"}
-                </td>
-
-                <td>
-                    ${object.width ?? "--"}
-                </td>
-
-                <td>
-                    ${object.height ?? "--"}
-                </td>
-
-            `;
+            item.className =
+                "object-item";
 
 
-            tableBody.appendChild(
-                row
+            // -----------------------------------------------
+            // Header
+            // -----------------------------------------------
+
+            const header =
+                document.createElement(
+                    "div"
+                );
+
+
+            header.className =
+                "object-item-header";
+
+
+
+            const type =
+                document.createElement(
+                    "span"
+                );
+
+
+            type.className =
+                "object-type";
+
+
+            type.textContent =
+                object.type ?? "unknown";
+
+
+
+            const id =
+                document.createElement(
+                    "span"
+                );
+
+
+            id.className =
+                "object-id";
+
+
+            id.textContent =
+                `ID ${object.id ?? "--"}`;
+
+
+
+            header.appendChild(
+                type
+            );
+
+
+            header.appendChild(
+                id
+            );
+
+
+            item.appendChild(
+                header
+            );
+
+
+
+            // -----------------------------------------------
+            // Bounding box coordinates
+            // -----------------------------------------------
+
+            const coordinates =
+                document.createElement(
+                    "div"
+                );
+
+
+            coordinates.className =
+                "object-coordinates";
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "X",
+                    object.x
+                )
+            );
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "Y",
+                    object.y
+                )
+            );
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "Width",
+                    object.width
+                )
+            );
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "Height",
+                    object.height
+                )
+            );
+
+
+            item.appendChild(
+                coordinates
+            );
+
+
+            objectList.appendChild(
+                item
             );
 
         }
     );
 
+}
+
+
+
+// ============================================================
+// Create one coordinate display element
+// ============================================================
+
+function createCoordinate(
+    label,
+    value
+) {
+
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+
+    const labelElement =
+        document.createElement(
+            "span"
+        );
+
+
+    labelElement.className =
+        "coordinate-label";
+
+
+    labelElement.textContent =
+        `${label}: `;
+
+
+    element.appendChild(
+        labelElement
+    );
+
+
+    element.appendChild(
+        document.createTextNode(
+            value ?? "--"
+        )
+    );
+
+
+    return element;
 }
 
 
