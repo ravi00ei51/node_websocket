@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vehicle Telemetry Dashboard</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: #f3f4f6;
+        }
+
+        header {
+            background: #1f2937;
+            padding: 16px 24px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            border-bottom: 1px solid #374151;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        #connectionStatus {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .connected {
+            background: #065f46;
+            color: #d1fae5;
+        }
+
+        .disconnected {
+            background: #7f1d1d;
+            color: #fee2e2;
+        }
+
+        .connecting {
+            background: #78350f;
+            color: #fef3c7;
+        }
+
+
+        /* Main page */
+
+        .container {
+            padding: 20px;
+        }
+
+
+        /* Telemetry cards */
+
+        .telemetry-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(180px, 1fr));
+
+            gap: 15px;
+
+            margin-bottom: 20px;
+        }
+
+        .card {
+
+            background: #1f2937;
+
+            padding: 18px;
+
+            border-radius: 10px;
+
+            border: 1px solid #374151;
+        }
+
+        .card-title {
+
+            color: #9ca3af;
+
+            font-size: 13px;
+
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+
+            font-size: 28px;
+
+            font-weight: bold;
+        }
+
+        .unit {
+
+            font-size: 14px;
+
+            color: #9ca3af;
+        }
+
+
+        /* Map */
+
+        .map-container {
+
+            background: #1f2937;
+
+            border-radius: 10px;
+
+            padding: 10px;
+
+            border: 1px solid #374151;
+
+            margin-bottom: 20px;
+        }
+
+        #map {
+
+            height: 450px;
+
+            border-radius: 8px;
+        }
+
+
+        /* Information section */
+
+        .info-panel {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
+
+            gap: 10px;
+
+            background: #1f2937;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            border: 1px solid #374151;
+
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+
+            font-size: 14px;
+        }
+
+        .info-label {
+
+            color: #9ca3af;
+        }
+
+
+        /* Raw JSON */
+
+        .raw-container {
+
+            background: #1f2937;
+
+            border: 1px solid #374151;
+
+            border-radius: 10px;
+
+            padding: 15px;
+        }
+
+        .raw-container h3 {
+
+            margin-top: 0;
+        }
+
+        #rawTelemetry {
+
+            background: #030712;
+
+            padding: 15px;
+
+            border-radius: 6px;
+
+            overflow-x: auto;
+
+            min-height: 100px;
+
+            color: #93c5fd;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>Vehicle Telemetry Dashboard</h1>
+
+    <div
+        id="connectionStatus"
+        class="disconnected">
+        Disconnected
+    </div>
+
+</header>
+
+
+<div class="container">
+
+
+    <!-- ================================================= -->
+    <!-- Telemetry -->
+    <!-- ================================================= -->
+
+    <div class="telemetry-grid">
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Speed
+            </div>
+
+            <div class="card-value">
+
+                <span id="speed">--</span>
+
+                <span class="unit">
+                    km/h
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Heading
+            </div>
+
+            <div class="card-value">
+
+                <span id="heading">--</span>
+
+                <span class="unit">
+                    °
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                CPU Temperature
+            </div>
+
+            <div class="card-value">
+
+                <span id="cpuTemp">--</span>
+
+                <span class="unit">
+                    °C
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                GPU Temperature
+            </div>
+
+            <div class="card-value">
+
+                <span id="gpuTemp">--</span>
+
+                <span class="unit">
+                    °C
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Latitude
+            </div>
+
+            <div class="card-value">
+
+                <span id="latitude">--</span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                Longitude
+            </div>
+
+            <div class="card-value">
+
+                <span id="longitude">--</span>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- Map -->
+    <!-- ================================================= -->
+
+    <div class="map-container">
+
+        <div id="map"></div>
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- Connection information -->
+    <!-- ================================================= -->
+
+    <div class="info-panel">
+
+
+        <div class="info-item">
+
+            <span class="info-label">
+                Vehicle:
+            </span>
+
+            <span id="vehicleId">
+                vehicle_001
+            </span>
+
+        </div>
+
+
+        <div class="info-item">
+
+            <span class="info-label">
+                Last Update:
+            </span>
+
+            <span id="lastUpdate">
+                --
+            </span>
+
+        </div>
+
+
+        <div class="info-item">
+
+            <span class="info-label">
+                Messages:
+            </span>
+
+            <span id="messageCount">
+                0
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================================================= -->
+    <!-- Raw telemetry -->
+    <!-- ================================================= -->
+
+    <div class="raw-container">
+
+        <h3>
+            Raw Telemetry
+        </h3>
+
+        <pre id="rawTelemetry">
+Waiting for telemetry...
+        </pre>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- Leaflet -->
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
+<script>
+
+
+// ============================================================
+// Configuration
+// ============================================================
+
+const VEHICLE_ID = "vehicle_001";
+
+
+// Automatically select ws:// or wss://
+//
+// Local:
+// http://localhost:3000
+// becomes
+// ws://localhost:3000
+//
+// Render:
+// https://web-socket-9wz7.onrender.com
+// becomes
+// wss://web-socket-9wz7.onrender.com
+//
+
+const wsProtocol =
+    window.location.protocol === "https:"
+        ? "wss:"
+        : "ws:";
+
+
+const WEBSOCKET_URL =
+    `${wsProtocol}//${window.location.host}`;
+
+
+
+// ============================================================
+// State
+// ============================================================
+
+let socket = null;
+
+let messageCount = 0;
+
+let reconnectTimer = null;
+
+
+
+// ============================================================
+// Map
+// ============================================================
+
+const map = L.map("map").setView(
+    [54.7, -6.2],
+    10
+);
+
+
+L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        maxZoom: 19,
+
+        attribution:
+            "&copy; OpenStreetMap contributors"
+    }
+).addTo(map);
+
+
+let vehicleMarker = null;
+
+let firstPosition = true;
+
+
+
+// ============================================================
+// Connection status
+// ============================================================
+
+function setConnectionStatus(
+    text,
+    className
+) {
+
+    const element =
+        document.getElementById(
+            "connectionStatus"
+        );
+
+    element.textContent = text;
+
+    element.className = className;
+}
+
+
+
+// ============================================================
+// Connect WebSocket
+// ============================================================
+
+function connectWebSocket() {
+
+
+    if (
+        socket &&
+        (
+            socket.readyState === WebSocket.OPEN ||
+            socket.readyState === WebSocket.CONNECTING
+        )
+    ) {
+
+        return;
+    }
+
+
+    setConnectionStatus(
+        "Connecting...",
+        "connecting"
+    );
+
+
+    console.log(
+        "Connecting to:",
+        WEBSOCKET_URL
+    );
+
+
+    socket =
+        new WebSocket(
+            WEBSOCKET_URL
+        );
+
+
+
+    // --------------------------------------------------------
+    // Connected
+    // --------------------------------------------------------
+
+    socket.onopen = function () {
+
+
+        console.log(
+            "WebSocket connected"
+        );
+
+
+        // Send browser handshake
+
+        const handshake = {
+
+            type: "handshake",
+
+            role: "browser",
+
+            vehicleId: VEHICLE_ID
+
+        };
+
+
+        console.log(
+            "Sending handshake:",
+            handshake
+        );
+
+
+        socket.send(
+            JSON.stringify(
+                handshake
+            )
+        );
+
+    };
+
+
+
+    // --------------------------------------------------------
+    // Message
+    // --------------------------------------------------------
+
+    socket.onmessage = function (event) {
+
+
+        let data;
+
+
+        try {
+
+            data =
+                JSON.parse(
+                    event.data
+                );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Invalid JSON received:",
+                event.data
+            );
+
+            return;
+        }
+
+
+
+        // ----------------------------------------------------
+        // Handshake ACK
+        // ----------------------------------------------------
+
+        if (
+            data.type ===
+            "handshake_ack"
+        ) {
+
+
+            if (
+                data.status === "ok"
+            ) {
+
+                console.log(
+                    "Handshake successful:",
+                    data
+                );
+
+
+                setConnectionStatus(
+                    "Connected",
+                    "connected"
+                );
+
+            }
+
+
+            return;
+        }
+
+
+
+        // ----------------------------------------------------
+        // Telemetry
+        // ----------------------------------------------------
+
+        updateDashboard(
+            data
+        );
+
+    };
+
+
+
+    // --------------------------------------------------------
+    // Closed
+    // --------------------------------------------------------
+
+    socket.onclose = function (event) {
+
+
+        console.log(
+            "WebSocket closed:",
+            event.code,
+            event.reason
+        );
+
+
+        setConnectionStatus(
+            "Disconnected",
+            "disconnected"
+        );
+
+
+        // Reconnect after 3 seconds
+
+        clearTimeout(
+            reconnectTimer
+        );
+
+
+        reconnectTimer =
+            setTimeout(
+                connectWebSocket,
+                3000
+            );
+
+    };
+
+
+
+    // --------------------------------------------------------
+    // Error
+    // --------------------------------------------------------
+
+    socket.onerror = function (error) {
+
+
+        console.error(
+            "WebSocket error:",
+            error
+        );
+
+    };
+
+}
+
+
+
+// ============================================================
+// Update dashboard
+// ============================================================
+
+function updateDashboard(data) {
+
+
+    messageCount++;
+
+
+    document.getElementById(
+        "messageCount"
+    ).textContent =
+        messageCount;
+
+
+
+    // --------------------------------------------------------
+    // Raw telemetry
+    // --------------------------------------------------------
+
+    document.getElementById(
+        "rawTelemetry"
+    ).textContent =
+        JSON.stringify(
+            data,
+            null,
+            2
+        );
+
+
+
+    // --------------------------------------------------------
+    // Vehicle data
+    // --------------------------------------------------------
+
+    if (data.vehicle) {
+
+
+        if (
+            data.vehicle.speed !== undefined
+        ) {
+
+            document.getElementById(
+                "speed"
+            ).textContent =
+                Number(
+                    data.vehicle.speed
+                ).toFixed(1);
+
+        }
+
+
+        if (
+            data.vehicle.heading !== undefined
+        ) {
+
+            document.getElementById(
+                "heading"
+            ).textContent =
+                Number(
+                    data.vehicle.heading
+                ).toFixed(1);
+
+        }
+
+    }
+
+
+
+    // --------------------------------------------------------
+    // System data
+    // --------------------------------------------------------
+
+    if (data.system) {
+
+
+        if (
+            data.system.cpuTemp !== undefined
+        ) {
+
+            document.getElementById(
+                "cpuTemp"
+            ).textContent =
+                Number(
+                    data.system.cpuTemp
+                ).toFixed(1);
+
+        }
+
+
+        if (
+            data.system.gpuTemp !== undefined
+        ) {
+
+            document.getElementById(
+                "gpuTemp"
+            ).textContent =
+                Number(
+                    data.system.gpuTemp
+                ).toFixed(1);
+
+        }
+
+    }
+
+
+
+    // --------------------------------------------------------
+    // GPS
+    // --------------------------------------------------------
+
+    if (
+        data.location &&
+        data.location.latitude !== undefined &&
+        data.location.longitude !== undefined
+    ) {
+
+
+        const latitude =
+            Number(
+                data.location.latitude
+            );
+
+
+        const longitude =
+            Number(
+                data.location.longitude
+            );
+
+
+        document.getElementById(
+            "latitude"
+        ).textContent =
+            latitude.toFixed(6);
+
+
+        document.getElementById(
+            "longitude"
+        ).textContent =
+            longitude.toFixed(6);
+
+
+
+        // ----------------------------------------------------
+        // Create marker
+        // ----------------------------------------------------
+
+        if (!vehicleMarker) {
+
+
+            vehicleMarker =
+                L.marker(
+                    [
+                        latitude,
+                        longitude
+                    ]
+                ).addTo(map);
+
+
+            vehicleMarker.bindPopup(
+                VEHICLE_ID
+            );
+
+        }
+
+        else {
+
+
+            vehicleMarker.setLatLng(
+                [
+                    latitude,
+                    longitude
+                ]
+            );
+
+        }
+
+
+
+        // ----------------------------------------------------
+        // Center map on first GPS position
+        // ----------------------------------------------------
+
+        if (firstPosition) {
+
+
+            map.setView(
+                [
+                    latitude,
+                    longitude
+                ],
+                15
+            );
+
+
+            firstPosition =
+                false;
+
+        }
+
+    }
+
+
+
+    // --------------------------------------------------------
+    // Last update
+    // --------------------------------------------------------
+
+    const now =
+        new Date();
+
+
+    document.getElementById(
+        "lastUpdate"
+    ).textContent =
+        now.toLocaleTimeString();
+
+}
+
+
+
+// ============================================================
+// Start
+// ============================================================
+
+connectWebSocket();
+
+
+</script>
+
+
+</body>
+
+</html>
