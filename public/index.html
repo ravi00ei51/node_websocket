@@ -16,15 +16,11 @@
     </title>
 
 
-    <!-- Leaflet -->
-
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 
-
-    <!-- Dashboard CSS -->
 
     <link
         rel="stylesheet"
@@ -140,8 +136,6 @@
         <section class="telemetry-grid">
 
 
-            <!-- Frame -->
-
             <div class="card">
 
                 <div class="card-title">
@@ -157,9 +151,6 @@
 
             </div>
 
-
-
-            <!-- Speed -->
 
             <div class="card">
 
@@ -182,9 +173,6 @@
             </div>
 
 
-
-            <!-- Latitude -->
-
             <div class="card">
 
                 <div class="card-title">
@@ -201,9 +189,6 @@
             </div>
 
 
-
-            <!-- Longitude -->
-
             <div class="card">
 
                 <div class="card-title">
@@ -219,9 +204,6 @@
 
             </div>
 
-
-
-            <!-- Objects -->
 
             <div class="card">
 
@@ -347,6 +329,14 @@
 
                 <div class="button-row">
 
+                    <button
+                        id="replayLastButton"
+                        class="button"
+                        disabled
+                    >
+                        Replay Last Recording
+                    </button>
+
 
                     <button
                         id="loadReplayButton"
@@ -361,7 +351,6 @@
                         id="previousFrameButton"
                         class="button"
                         disabled
-                        title="Previous frame"
                     >
                         ◀
                     </button>
@@ -380,7 +369,6 @@
                         id="nextFrameButton"
                         class="button"
                         disabled
-                        title="Next frame"
                     >
                         ▶
                     </button>
@@ -468,10 +456,6 @@
         <section class="main-display">
 
 
-            <!-- =============================================
-                 Map
-                 ============================================= -->
-
             <div class="map-panel">
 
 
@@ -501,10 +485,6 @@
             </div>
 
 
-
-            <!-- =============================================
-                 Detected Objects
-                 ============================================= -->
 
             <div class="object-panel">
 
@@ -617,10 +597,6 @@
 </div>
 
 
-
-<!-- =========================================================
-     JavaScript
-     ========================================================= -->
 
 <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

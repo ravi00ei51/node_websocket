@@ -9,10 +9,8 @@
 
 html,
 body {
-
     margin: 0;
     padding: 0;
-
     min-height: 100%;
 
     font-family:
@@ -21,7 +19,6 @@ body {
         sans-serif;
 
     background: #111827;
-
     color: #f3f4f6;
 }
 
@@ -32,7 +29,6 @@ body {
    ============================================================ */
 
 header {
-
     height: 62px;
 
     background: #1f2937;
@@ -42,36 +38,27 @@ header {
     display: flex;
 
     justify-content: space-between;
-
     align-items: center;
 
-    border-bottom:
-        1px solid #374151;
+    border-bottom: 1px solid #374151;
 }
 
 
 header h1 {
-
     margin: 0 0 2px 0;
-
     font-size: 20px;
 }
 
 
 .header-subtitle {
-
     color: #9ca3af;
-
     font-size: 12px;
 }
 
 
 .header-status {
-
     display: flex;
-
     align-items: center;
-
     gap: 8px;
 }
 
@@ -83,64 +70,50 @@ header h1 {
 
 .status,
 .mode {
-
     padding: 6px 11px;
-
     border-radius: 6px;
 
     font-size: 12px;
-
     font-weight: bold;
 }
 
 
 .connected {
-
     background: #065f46;
-
     color: #d1fae5;
 }
 
 
 .disconnected {
-
     background: #7f1d1d;
-
     color: #fee2e2;
 }
 
 
 .connecting {
-
     background: #78350f;
-
     color: #fef3c7;
 }
 
 
 .live-mode {
-
     background: #1e3a8a;
-
     color: #dbeafe;
 }
 
 
 .replay-mode {
-
     background: #6b21a8;
-
     color: #f3e8ff;
 }
 
 
 
 /* ============================================================
-   Application Layout
+   Application
    ============================================================ */
 
 .application-layout {
-
     display: grid;
 
     grid-template-columns:
@@ -153,11 +126,10 @@ header h1 {
 
 
 /* ============================================================
-   Vehicle Sidebar
+   Sidebar
    ============================================================ */
 
 .vehicle-sidebar {
-
     background: #0f172a;
 
     border-right:
@@ -168,16 +140,13 @@ header h1 {
 
 
 .vehicle-sidebar-header {
-
     height: 46px;
 
-    padding:
-        0 13px;
+    padding: 0 13px;
 
     display: flex;
 
     justify-content: space-between;
-
     align-items: center;
 
     font-weight: bold;
@@ -188,7 +157,6 @@ header h1 {
 
 
 .vehicle-count {
-
     min-width: 26px;
 
     text-align: center;
@@ -204,7 +172,6 @@ header h1 {
 
 
 .vehicle-list {
-
     padding: 8px;
 
     overflow-y: auto;
@@ -214,13 +181,7 @@ header h1 {
 }
 
 
-
-/* ============================================================
-   Vehicle Item
-   ============================================================ */
-
 .vehicle-item {
-
     position: relative;
 
     padding: 10px;
@@ -244,21 +205,11 @@ header h1 {
 
 
 .vehicle-item:hover {
-
     background: #273449;
 }
 
 
-
-/* ============================================================
-   Selected Vehicle
-
-   Selected vehicle is moved to the top by dashboard.js and
-   gets a stronger highlighted border.
-   ============================================================ */
-
 .vehicle-item.selected {
-
     border:
         2px solid #60a5fa;
 
@@ -266,35 +217,24 @@ header h1 {
 
     box-shadow:
         0 0 0 1px
-        rgba(
-            96,
-            165,
-            250,
-            0.15
-        );
+        rgba(96, 165, 250, 0.15);
 }
 
 
 .vehicle-name {
-
     font-weight: bold;
-
     font-size: 14px;
-
     margin-bottom: 3px;
 }
 
 
 .vehicle-id {
-
     color: #9ca3af;
-
     font-size: 11px;
 }
 
 
 .selected-vehicle-badge {
-
     display: inline-block;
 
     margin-bottom: 5px;
@@ -302,13 +242,11 @@ header h1 {
     padding: 2px 6px;
 
     background: #2563eb;
-
     color: #eff6ff;
 
     border-radius: 4px;
 
     font-size: 9px;
-
     font-weight: bold;
 
     letter-spacing: 0.5px;
@@ -316,7 +254,6 @@ header h1 {
 
 
 .vehicle-status-row {
-
     display: flex;
 
     align-items: center;
@@ -331,36 +268,28 @@ header h1 {
 }
 
 
-.vehicle-online-dot {
-
+.vehicle-online-dot,
+.vehicle-offline-dot {
     width: 7px;
-
     height: 7px;
 
     flex-shrink: 0;
 
     border-radius: 50%;
+}
 
+
+.vehicle-online-dot {
     background: #22c55e;
 }
 
 
 .vehicle-offline-dot {
-
-    width: 7px;
-
-    height: 7px;
-
-    flex-shrink: 0;
-
-    border-radius: 50%;
-
     background: #ef4444;
 }
 
 
 .no-vehicles {
-
     padding: 18px 5px;
 
     text-align: center;
@@ -373,11 +302,10 @@ header h1 {
 
 
 /* ============================================================
-   Dashboard Container
+   Container
    ============================================================ */
 
 .container {
-
     width: 100%;
 
     max-width: 1800px;
@@ -392,18 +320,14 @@ header h1 {
 
 
 /* ============================================================
-   Telemetry Cards
+   Telemetry
    ============================================================ */
 
 .telemetry-grid {
-
     display: grid;
 
     grid-template-columns:
-        repeat(
-            5,
-            minmax(120px, 1fr)
-        );
+        repeat(5, minmax(120px, 1fr));
 
     gap: 10px;
 
@@ -412,7 +336,6 @@ header h1 {
 
 
 .card {
-
     background: #1f2937;
 
     padding: 11px 14px;
@@ -425,7 +348,6 @@ header h1 {
 
 
 .card-title {
-
     color: #9ca3af;
 
     font-size: 12px;
@@ -435,21 +357,17 @@ header h1 {
 
 
 .card-value {
-
     font-size: 23px;
-
     font-weight: bold;
 }
 
 
 .coordinate-value {
-
     font-size: 18px;
 }
 
 
 .unit {
-
     color: #9ca3af;
 
     font-size: 12px;
@@ -464,7 +382,6 @@ header h1 {
    ============================================================ */
 
 .control-panel {
-
     display: grid;
 
     grid-template-columns:
@@ -477,7 +394,6 @@ header h1 {
 
 
 .control-section {
-
     background: #1f2937;
 
     border:
@@ -490,9 +406,7 @@ header h1 {
 
 
 .control-title {
-
     font-size: 14px;
-
     font-weight: bold;
 
     margin-bottom: 7px;
@@ -500,7 +414,6 @@ header h1 {
 
 
 .button-row {
-
     display: flex;
 
     flex-wrap: wrap;
@@ -512,12 +425,10 @@ header h1 {
 
 
 .button {
-
     border:
         1px solid #4b5563;
 
     background: #374151;
-
     color: #f9fafb;
 
     padding: 6px 10px;
@@ -531,25 +442,20 @@ header h1 {
 
 
 .button:hover:not(:disabled) {
-
     background: #4b5563;
 }
 
 
 .button:disabled {
-
     opacity: 0.4;
-
     cursor: not-allowed;
 }
 
 
 .speed-select {
-
     padding: 6px;
 
     background: #111827;
-
     color: #f3f4f6;
 
     border:
@@ -562,7 +468,6 @@ header h1 {
 
 
 .control-info {
-
     margin-top: 6px;
 
     color: #9ca3af;
@@ -572,7 +477,6 @@ header h1 {
 
 
 .recording-selector {
-
     display: flex;
 
     align-items: center;
@@ -588,28 +492,19 @@ header h1 {
 
 
 #recordingSelect {
-
     flex: 1;
 
     min-width: 100px;
 }
 
 
-
-/* ============================================================
-   Replay Slider
-   ============================================================ */
-
 .replay-slider-row {
-
     margin-top: 7px;
 }
 
 
 #replaySlider {
-
     width: 100%;
-
     height: 14px;
 
     cursor: pointer;
@@ -618,11 +513,10 @@ header h1 {
 
 
 /* ============================================================
-   Map + Object Layout
+   Map + Objects
    ============================================================ */
 
 .main-display {
-
     display: grid;
 
     grid-template-columns:
@@ -630,11 +524,6 @@ header h1 {
         minmax(290px, 1fr);
 
     gap: 10px;
-
-    /*
-     * Makes the map visible on typical desktop screens while
-     * still allowing it to grow on larger displays.
-     */
 
     height:
         clamp(
@@ -647,23 +536,15 @@ header h1 {
 }
 
 
-
-/* ============================================================
-   Panel Header
-   ============================================================ */
-
 .panel-header {
-
     padding: 9px 12px;
 
     display: flex;
 
     justify-content: space-between;
-
     align-items: center;
 
     font-size: 14px;
-
     font-weight: bold;
 
     border-bottom:
@@ -672,7 +553,6 @@ header h1 {
 
 
 .panel-secondary {
-
     color: #93c5fd;
 
     font-size: 11px;
@@ -687,7 +567,6 @@ header h1 {
    ============================================================ */
 
 .map-panel {
-
     min-width: 0;
 
     display: flex;
@@ -706,7 +585,6 @@ header h1 {
 
 
 .map-content {
-
     flex: 1;
 
     min-height: 0;
@@ -716,9 +594,7 @@ header h1 {
 
 
 #map {
-
     width: 100%;
-
     height: 100%;
 
     border-radius: 6px;
@@ -727,11 +603,10 @@ header h1 {
 
 
 /* ============================================================
-   Object Panel
+   Objects
    ============================================================ */
 
 .object-panel {
-
     min-width: 0;
 
     display: flex;
@@ -750,17 +625,14 @@ header h1 {
 
 
 .object-panel-header {
-
     padding: 9px 12px;
 
     display: flex;
 
     justify-content: space-between;
-
     align-items: center;
 
     font-size: 14px;
-
     font-weight: bold;
 
     border-bottom:
@@ -769,7 +641,6 @@ header h1 {
 
 
 .object-count-badge {
-
     min-width: 27px;
 
     padding: 3px 7px;
@@ -784,13 +655,7 @@ header h1 {
 }
 
 
-
-/* ============================================================
-   Object List
-   ============================================================ */
-
 .object-list {
-
     flex: 1;
 
     min-height: 0;
@@ -802,7 +667,6 @@ header h1 {
 
 
 .object-item {
-
     background: #111827;
 
     border:
@@ -817,11 +681,9 @@ header h1 {
 
 
 .object-item-header {
-
     display: flex;
 
     justify-content: space-between;
-
     align-items: center;
 
     margin-bottom: 6px;
@@ -829,7 +691,6 @@ header h1 {
 
 
 .object-type {
-
     font-size: 13px;
 
     font-weight: bold;
@@ -839,7 +700,6 @@ header h1 {
 
 
 .object-id {
-
     color: #93c5fd;
 
     font-size: 12px;
@@ -849,7 +709,6 @@ header h1 {
 
 
 .object-coordinates {
-
     display: grid;
 
     grid-template-columns:
@@ -862,13 +721,11 @@ header h1 {
 
 
 .coordinate-label {
-
     color: #9ca3af;
 }
 
 
 .no-objects {
-
     color: #9ca3af;
 
     text-align: center;
@@ -883,14 +740,10 @@ header h1 {
    ============================================================ */
 
 .info-panel {
-
     display: grid;
 
     grid-template-columns:
-        repeat(
-            3,
-            1fr
-        );
+        repeat(3, 1fr);
 
     gap: 10px;
 
@@ -910,7 +763,6 @@ header h1 {
 
 
 .info-label {
-
     color: #9ca3af;
 
     margin-right: 4px;
@@ -919,11 +771,10 @@ header h1 {
 
 
 /* ============================================================
-   Raw Telemetry
+   Raw telemetry
    ============================================================ */
 
 .raw-container {
-
     background: #1f2937;
 
     border:
@@ -936,13 +787,11 @@ header h1 {
 
 
 #rawTelemetry {
-
     margin: 0;
 
     padding: 10px 12px;
 
     min-height: 120px;
-
     max-height: 300px;
 
     overflow: auto;
@@ -961,66 +810,50 @@ header h1 {
 
 
 /* ============================================================
-   Responsive - Medium
+   Responsive
    ============================================================ */
 
 @media (max-width: 1100px) {
 
     .application-layout {
-
         grid-template-columns:
             200px minmax(0, 1fr);
     }
 
 
     .telemetry-grid {
-
         grid-template-columns:
-            repeat(
-                3,
-                1fr
-            );
+            repeat(3, 1fr);
     }
 
 
     .control-panel {
-
         grid-template-columns:
             1fr;
     }
 
 
     .main-display {
-
         height: 550px;
     }
 
 }
 
 
-
-/* ============================================================
-   Responsive - Small
-   ============================================================ */
-
 @media (max-width: 800px) {
 
     header {
-
         height: auto;
-
         min-height: 62px;
     }
 
 
     .application-layout {
-
         display: block;
     }
 
 
     .vehicle-sidebar {
-
         border-right: 0;
 
         border-bottom:
@@ -1029,7 +862,6 @@ header h1 {
 
 
     .vehicle-list {
-
         display: flex;
 
         overflow-x: auto;
@@ -1039,7 +871,6 @@ header h1 {
 
 
     .vehicle-item {
-
         min-width: 170px;
 
         flex-shrink: 0;
@@ -1047,17 +878,12 @@ header h1 {
 
 
     .telemetry-grid {
-
         grid-template-columns:
-            repeat(
-                2,
-                1fr
-            );
+            repeat(2, 1fr);
     }
 
 
     .main-display {
-
         grid-template-columns:
             1fr;
 
@@ -1066,19 +892,16 @@ header h1 {
 
 
     .map-panel {
-
         height: 400px;
     }
 
 
     .object-panel {
-
         height: 400px;
     }
 
 
     .info-panel {
-
         grid-template-columns:
             1fr;
     }
