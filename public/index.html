@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -15,19 +16,15 @@
     </title>
 
 
-    <!-- =====================================================
-         Leaflet map CSS
-         ===================================================== -->
+    <!-- Leaflet -->
 
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    >
 
 
-    <!-- =====================================================
-         Our dashboard CSS
-         ===================================================== -->
+    <!-- Dashboard -->
 
     <link
         rel="stylesheet"
@@ -59,12 +56,22 @@
     </div>
 
 
-    <div
-        id="connectionStatus"
-        class="status disconnected"
-    >
+    <div class="header-status">
 
-        Disconnected
+        <div
+            id="modeStatus"
+            class="mode live-mode"
+        >
+            LIVE
+        </div>
+
+
+        <div
+            id="connectionStatus"
+            class="status disconnected"
+        >
+            Disconnected
+        </div>
 
     </div>
 
@@ -72,21 +79,15 @@
 
 
 
-<!-- =========================================================
-     Main page
-     ========================================================= -->
-
 <main class="container">
 
 
     <!-- =====================================================
-         Telemetry summary cards
+         Telemetry cards
          ===================================================== -->
 
     <section class="telemetry-grid">
 
-
-        <!-- Frame Number -->
 
         <div class="card">
 
@@ -104,8 +105,6 @@
         </div>
 
 
-
-        <!-- Speed -->
 
         <div class="card">
 
@@ -129,8 +128,6 @@
 
 
 
-        <!-- Latitude -->
-
         <div class="card">
 
             <div class="card-title">
@@ -148,8 +145,6 @@
 
 
 
-        <!-- Longitude -->
-
         <div class="card">
 
             <div class="card-title">
@@ -166,8 +161,6 @@
         </div>
 
 
-
-        <!-- Number of detected objects -->
 
         <div class="card">
 
@@ -190,23 +183,206 @@
 
 
     <!-- =====================================================
-         Map + Detected Objects
+         Recording / Replay
+         ===================================================== -->
+
+    <section class="control-panel">
+
+
+        <!-- Recording -->
+
+        <div class="control-section">
+
+            <div class="control-title">
+                Recording
+            </div>
+
+
+            <div class="button-row">
+
+                <button
+                    id="startRecordingButton"
+                    class="button"
+                >
+                    Start Recording
+                </button>
+
+
+                <button
+                    id="stopRecordingButton"
+                    class="button"
+                    disabled
+                >
+                    Stop Recording
+                </button>
+
+
+                <button
+                    id="saveRecordingButton"
+                    class="button"
+                    disabled
+                >
+                    Save JSON
+                </button>
+
+            </div>
+
+
+            <div class="control-info">
+
+                <span id="recordingStatus">
+                    Not recording
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Replay -->
+
+        <div class="control-section">
+
+            <div class="control-title">
+                Replay
+            </div>
+
+
+            <div class="button-row">
+
+                <label
+                    for="replayFileInput"
+                    class="button file-button"
+                >
+                    Load Recording
+                </label>
+
+
+                <input
+                    id="replayFileInput"
+                    type="file"
+                    accept=".json,application/json"
+                    hidden
+                >
+
+
+                <button
+                    id="previousFrameButton"
+                    class="button"
+                    disabled
+                >
+                    ◀
+                </button>
+
+
+                <button
+                    id="playReplayButton"
+                    class="button"
+                    disabled
+                >
+                    Play
+                </button>
+
+
+                <button
+                    id="nextFrameButton"
+                    class="button"
+                    disabled
+                >
+                    ▶
+                </button>
+
+
+                <button
+                    id="stopReplayButton"
+                    class="button"
+                    disabled
+                >
+                    Stop
+                </button>
+
+
+                <select
+                    id="replaySpeed"
+                    class="speed-select"
+                >
+
+                    <option value="0.25">
+                        0.25x
+                    </option>
+
+                    <option value="0.5">
+                        0.5x
+                    </option>
+
+                    <option
+                        value="1"
+                        selected
+                    >
+                        1x
+                    </option>
+
+                    <option value="2">
+                        2x
+                    </option>
+
+                    <option value="5">
+                        5x
+                    </option>
+
+                    <option value="10">
+                        10x
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="replay-slider-row">
+
+                <input
+                    id="replaySlider"
+                    type="range"
+                    min="0"
+                    max="0"
+                    value="0"
+                    disabled
+                >
+
+            </div>
+
+
+            <div class="control-info">
+
+                <span id="replayStatus">
+                    No recording loaded
+                </span>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         Map + objects
          ===================================================== -->
 
     <section class="main-display">
 
 
-        <!-- =================================================
-             Map
-             ================================================= -->
+        <!-- Map -->
 
         <div class="map-panel">
 
             <div class="panel-header">
 
-                <span>
-                    Vehicle Location
-                </span>
+                Vehicle Location
 
             </div>
 
@@ -221,9 +397,7 @@
 
 
 
-        <!-- =================================================
-             Detected Objects
-             ================================================= -->
+        <!-- Detected objects -->
 
         <div class="object-panel">
 
@@ -245,20 +419,13 @@
             </div>
 
 
-
-            <!--
-                This part scrolls when there are many objects.
-            -->
-
             <div
                 id="objectList"
                 class="object-list"
             >
 
                 <div class="no-objects">
-
                     Waiting for detections...
-
                 </div>
 
             </div>
@@ -272,13 +439,13 @@
 
 
     <!-- =====================================================
-         Connection information
+         Information
          ===================================================== -->
 
     <section class="info-panel">
 
 
-        <div class="info-item">
+        <div>
 
             <span class="info-label">
                 Vehicle:
@@ -291,8 +458,7 @@
         </div>
 
 
-
-        <div class="info-item">
+        <div>
 
             <span class="info-label">
                 Last Update:
@@ -305,11 +471,10 @@
         </div>
 
 
-
-        <div class="info-item">
+        <div>
 
             <span class="info-label">
-                Messages Received:
+                Live Messages:
             </span>
 
             <span id="messageCount">
@@ -329,16 +494,11 @@
 
     <section class="raw-container">
 
-
         <div class="panel-header">
-
             Raw Telemetry
-
         </div>
 
-
         <pre id="rawTelemetry">Waiting for telemetry...</pre>
-
 
     </section>
 
@@ -347,821 +507,12 @@
 
 
 
-<!-- =========================================================
-     Leaflet JavaScript
-     ========================================================= -->
-
 <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ></script>
 
 
-
-<script>
-
-
-// ============================================================
-// Configuration
-// ============================================================
-
-const VEHICLE_ID = "vehicle_001";
-
-
-// Determine WebSocket protocol automatically.
-//
-// Render:
-//
-// https://...
-// becomes
-// wss://...
-//
-// Local:
-//
-// http://localhost:3000
-// becomes
-// ws://localhost:3000
-//
-
-const wsProtocol =
-    window.location.protocol === "https:"
-        ? "wss:"
-        : "ws:";
-
-
-const WEBSOCKET_URL =
-    `${wsProtocol}//${window.location.host}`;
-
-    
-
-// ============================================================
-// State
-// ============================================================
-
-let socket = null;
-
-let reconnectTimer = null;
-
-let messageCount = 0;
-
-
-
-// ============================================================
-// Map
-// ============================================================
-
-const map =
-    L.map(
-        "map"
-    ).setView(
-        [54.7, -6.2],
-        10
-    );
-
-
-L.tileLayer(
-
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-
-    {
-
-        maxZoom: 19,
-
-        attribution:
-            "&copy; OpenStreetMap contributors"
-
-    }
-
-).addTo(map);
-
-
-let vehicleMarker = null;
-
-let firstPosition = true;
-
-
-
-// ============================================================
-// Connection status
-// ============================================================
-
-function setConnectionStatus(
-    text,
-    className
-) {
-
-    const element =
-        document.getElementById(
-            "connectionStatus"
-        );
-
-
-    element.textContent =
-        text;
-
-
-    element.className =
-        `status ${className}`;
-}
-
-
-
-// ============================================================
-// Connect WebSocket
-// ============================================================
-
-function connectWebSocket() {
-
-
-    if (
-        socket &&
-        (
-            socket.readyState === WebSocket.OPEN ||
-            socket.readyState === WebSocket.CONNECTING
-        )
-    ) {
-
-        return;
-    }
-
-
-    setConnectionStatus(
-        "Connecting...",
-        "connecting"
-    );
-
-
-    console.log(
-        "Connecting to:",
-        WEBSOCKET_URL
-    );
-
-
-    socket =
-        new WebSocket(
-            WEBSOCKET_URL
-        );
-
-
-
-    // --------------------------------------------------------
-    // Connected
-    // --------------------------------------------------------
-
-    socket.onopen = function () {
-
-
-        console.log(
-            "WebSocket connected"
-        );
-
-
-        const handshake = {
-
-            type:
-                "handshake",
-
-            role:
-                "browser",
-
-            vehicleId:
-                VEHICLE_ID
-
-        };
-
-
-        console.log(
-            "Sending browser handshake:",
-            handshake
-        );
-
-
-        socket.send(
-            JSON.stringify(
-                handshake
-            )
-        );
-
-    };
-
-
-
-    // --------------------------------------------------------
-    // Message received
-    // --------------------------------------------------------
-
-    socket.onmessage = function (
-        event
-    ) {
-
-
-        let data;
-
-
-        try {
-
-            data =
-                JSON.parse(
-                    event.data
-                );
-
-        }
-        catch (error) {
-
-            console.error(
-                "Invalid JSON received:",
-                event.data
-            );
-
-            return;
-        }
-
-
-
-        // ----------------------------------------------------
-        // Handshake acknowledgement
-        // ----------------------------------------------------
-
-        if (
-            data.type ===
-            "handshake_ack"
-        ) {
-
-
-            if (
-                data.status ===
-                "ok"
-            ) {
-
-                console.log(
-                    "Handshake successful:",
-                    data
-                );
-
-
-                setConnectionStatus(
-                    "Connected",
-                    "connected"
-                );
-
-            }
-
-
-            return;
-        }
-
-
-
-        // ----------------------------------------------------
-        // Telemetry
-        // ----------------------------------------------------
-
-        updateDashboard(
-            data
-        );
-
-    };
-
-
-
-    // --------------------------------------------------------
-    // Connection closed
-    // --------------------------------------------------------
-
-    socket.onclose = function (
-        event
-    ) {
-
-
-        console.log(
-            "WebSocket closed:",
-            event.code,
-            event.reason
-        );
-
-
-        setConnectionStatus(
-            "Disconnected",
-            "disconnected"
-        );
-
-
-        clearTimeout(
-            reconnectTimer
-        );
-
-
-        reconnectTimer =
-            setTimeout(
-                connectWebSocket,
-                3000
-            );
-
-    };
-
-
-
-    // --------------------------------------------------------
-    // Error
-    // --------------------------------------------------------
-
-    socket.onerror = function (
-        error
-    ) {
-
-        console.error(
-            "WebSocket error:",
-            error
-        );
-
-    };
-
-}
-
-
-
-// ============================================================
-// Update dashboard
-// ============================================================
-
-function updateDashboard(
-    data
-) {
-
-
-    // --------------------------------------------------------
-    // Message counter
-    // --------------------------------------------------------
-
-    messageCount++;
-
-
-    document.getElementById(
-        "messageCount"
-    ).textContent =
-        messageCount;
-
-
-
-    // --------------------------------------------------------
-    // Raw JSON
-    // --------------------------------------------------------
-
-    document.getElementById(
-        "rawTelemetry"
-    ).textContent =
-        JSON.stringify(
-            data,
-            null,
-            2
-        );
-
-
-
-    // --------------------------------------------------------
-    // Frame number
-    // --------------------------------------------------------
-
-    if (
-        data.frameNumber !== undefined
-    ) {
-
-        document.getElementById(
-            "frameNumber"
-        ).textContent =
-            data.frameNumber;
-
-    }
-
-
-
-    // --------------------------------------------------------
-    // Speed
-    // --------------------------------------------------------
-
-    if (
-        data.speed !== undefined
-    ) {
-
-        document.getElementById(
-            "speed"
-        ).textContent =
-            Number(
-                data.speed
-            ).toFixed(1);
-
-    }
-
-
-
-    // --------------------------------------------------------
-    // GPS
-    // --------------------------------------------------------
-
-    if (
-        data.location &&
-        data.location.latitude !== undefined &&
-        data.location.longitude !== undefined
-    ) {
-
-
-        const latitude =
-            Number(
-                data.location.latitude
-            );
-
-
-        const longitude =
-            Number(
-                data.location.longitude
-            );
-
-
-        document.getElementById(
-            "latitude"
-        ).textContent =
-            latitude.toFixed(6);
-
-
-        document.getElementById(
-            "longitude"
-        ).textContent =
-            longitude.toFixed(6);
-
-
-
-        // ----------------------------------------------------
-        // Create/update vehicle marker
-        // ----------------------------------------------------
-
-        if (!vehicleMarker) {
-
-
-            vehicleMarker =
-                L.marker(
-                    [
-                        latitude,
-                        longitude
-                    ]
-                ).addTo(
-                    map
-                );
-
-
-            vehicleMarker.bindPopup(
-                VEHICLE_ID
-            );
-
-        }
-
-        else {
-
-
-            vehicleMarker.setLatLng(
-                [
-                    latitude,
-                    longitude
-                ]
-            );
-
-        }
-
-
-
-        // ----------------------------------------------------
-        // Center map only on first GPS position
-        // ----------------------------------------------------
-
-        if (
-            firstPosition
-        ) {
-
-
-            map.setView(
-                [
-                    latitude,
-                    longitude
-                ],
-                15
-            );
-
-
-            firstPosition =
-                false;
-
-        }
-
-    }
-
-
-
-    // --------------------------------------------------------
-    // Detected objects
-    // --------------------------------------------------------
-
-    updateDetectedObjects(
-        data.detectedObjects
-    );
-
-
-
-    // --------------------------------------------------------
-    // Last update time
-    // --------------------------------------------------------
-
-    document.getElementById(
-        "lastUpdate"
-    ).textContent =
-        new Date()
-            .toLocaleTimeString();
-
-}
-
-
-
-// ============================================================
-// Update detected object list
-// ============================================================
-
-function updateDetectedObjects(
-    objects
-) {
-
-
-    const objectList =
-        document.getElementById(
-            "objectList"
-        );
-
-
-    const objectCount =
-        document.getElementById(
-            "objectCount"
-        );
-
-
-    const objectPanelCount =
-        document.getElementById(
-            "objectPanelCount"
-        );
-
-
-    // Remove objects from previous frame
-
-    objectList.innerHTML = "";
-
-
-
-    // --------------------------------------------------------
-    // No objects detected
-    // --------------------------------------------------------
-
-    if (
-        !Array.isArray(objects) ||
-        objects.length === 0
-    ) {
-
-
-        objectCount.textContent =
-            "0";
-
-
-        objectPanelCount.textContent =
-            "0";
-
-
-        const emptyMessage =
-            document.createElement(
-                "div"
-            );
-
-
-        emptyMessage.className =
-            "no-objects";
-
-
-        emptyMessage.textContent =
-            "No objects detected";
-
-
-        objectList.appendChild(
-            emptyMessage
-        );
-
-
-        return;
-    }
-
-
-
-    // --------------------------------------------------------
-    // Number of objects
-    // --------------------------------------------------------
-
-    objectCount.textContent =
-        objects.length;
-
-
-    objectPanelCount.textContent =
-        objects.length;
-
-
-
-    // --------------------------------------------------------
-    // Add each object
-    // --------------------------------------------------------
-
-    objects.forEach(
-        function (object) {
-
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                "object-item";
-
-
-            // -----------------------------------------------
-            // Header
-            // -----------------------------------------------
-
-            const header =
-                document.createElement(
-                    "div"
-                );
-
-
-            header.className =
-                "object-item-header";
-
-
-
-            const type =
-                document.createElement(
-                    "span"
-                );
-
-
-            type.className =
-                "object-type";
-
-
-            type.textContent =
-                object.type ?? "unknown";
-
-
-
-            const id =
-                document.createElement(
-                    "span"
-                );
-
-
-            id.className =
-                "object-id";
-
-
-            id.textContent =
-                `ID ${object.id ?? "--"}`;
-
-
-
-            header.appendChild(
-                type
-            );
-
-
-            header.appendChild(
-                id
-            );
-
-
-            item.appendChild(
-                header
-            );
-
-
-
-            // -----------------------------------------------
-            // Bounding box coordinates
-            // -----------------------------------------------
-
-            const coordinates =
-                document.createElement(
-                    "div"
-                );
-
-
-            coordinates.className =
-                "object-coordinates";
-
-
-            coordinates.appendChild(
-                createCoordinate(
-                    "X",
-                    object.x
-                )
-            );
-
-
-            coordinates.appendChild(
-                createCoordinate(
-                    "Y",
-                    object.y
-                )
-            );
-
-
-            coordinates.appendChild(
-                createCoordinate(
-                    "Width",
-                    object.width
-                )
-            );
-
-
-            coordinates.appendChild(
-                createCoordinate(
-                    "Height",
-                    object.height
-                )
-            );
-
-
-            item.appendChild(
-                coordinates
-            );
-
-
-            objectList.appendChild(
-                item
-            );
-
-        }
-    );
-
-}
-
-
-
-// ============================================================
-// Create one coordinate display element
-// ============================================================
-
-function createCoordinate(
-    label,
-    value
-) {
-
-
-    const element =
-        document.createElement(
-            "div"
-        );
-
-
-    const labelElement =
-        document.createElement(
-            "span"
-        );
-
-
-    labelElement.className =
-        "coordinate-label";
-
-
-    labelElement.textContent =
-        `${label}: `;
-
-
-    element.appendChild(
-        labelElement
-    );
-
-
-    element.appendChild(
-        document.createTextNode(
-            value ?? "--"
-        )
-    );
-
-
-    return element;
-}
-
-
-
-// ============================================================
-// Start
-// ============================================================
-
-connectWebSocket();
-
-
-</script>
+<script src="/dashboard.js"></script>
 
 
 </body>

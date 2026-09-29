@@ -1,23 +1,13 @@
 {
   "name": "node_websocket",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Vehicle telemetry WebSocket server",
+  "main": "websocket/websocket_app.js",
+
   "scripts": {
-    "start": "node websocket/websocket_app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node websocket/websocket_app.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ravi00ei51/node_websocket.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ravi00ei51/node_websocket/issues"
-  },
-  "homepage": "https://github.com/ravi00ei51/node_websocket#readme",
+
   "dependencies": {
     "express": "^4.18.2",
     "ws": "^8.14.2"

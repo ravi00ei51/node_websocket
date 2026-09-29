@@ -9,9 +9,7 @@
 
 html,
 body {
-
     margin: 0;
-
     padding: 0;
 
     min-height: 100%;
@@ -21,18 +19,9 @@ body {
         Helvetica,
         sans-serif;
 
-    background:
-        #111827;
+    background: #111827;
 
-    color:
-        #f3f4f6;
-}
-
-
-body {
-
-    min-width:
-        320px;
+    color: #f3f4f6;
 }
 
 
@@ -43,121 +32,118 @@ body {
 
 header {
 
-    background:
-        #1f2937;
+    background: #1f2937;
 
-    padding:
-        16px 24px;
+    padding: 16px 24px;
 
-    display:
-        flex;
+    display: flex;
 
-    justify-content:
-        space-between;
+    justify-content: space-between;
 
-    align-items:
-        center;
+    align-items: center;
 
-    gap:
-        20px;
-
-    border-bottom:
-        1px solid #374151;
+    border-bottom: 1px solid #374151;
 }
 
 
 header h1 {
 
-    margin:
-        0 0 4px 0;
+    margin: 0 0 4px 0;
 
-    font-size:
-        22px;
+    font-size: 22px;
 }
 
 
 .header-subtitle {
 
-    color:
-        #9ca3af;
+    color: #9ca3af;
 
-    font-size:
-        13px;
+    font-size: 13px;
+}
+
+
+.header-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
 }
 
 
 
 /* ============================================================
-   Connection status
+   Status
    ============================================================ */
 
-.status {
+.status,
+.mode {
 
-    padding:
-        7px 13px;
+    padding: 7px 13px;
 
-    border-radius:
-        6px;
+    border-radius: 6px;
 
-    font-size:
-        14px;
+    font-size: 13px;
 
-    font-weight:
-        bold;
-
-    white-space:
-        nowrap;
+    font-weight: bold;
 }
 
 
 .connected {
 
-    background:
-        #065f46;
+    background: #065f46;
 
-    color:
-        #d1fae5;
+    color: #d1fae5;
 }
 
 
 .disconnected {
 
-    background:
-        #7f1d1d;
+    background: #7f1d1d;
 
-    color:
-        #fee2e2;
+    color: #fee2e2;
 }
 
 
 .connecting {
 
-    background:
-        #78350f;
+    background: #78350f;
 
-    color:
-        #fef3c7;
+    color: #fef3c7;
+}
+
+
+.live-mode {
+
+    background: #1e3a8a;
+
+    color: #dbeafe;
+}
+
+
+.replay-mode {
+
+    background: #6b21a8;
+
+    color: #f3e8ff;
 }
 
 
 
 /* ============================================================
-   Main container
+   Container
    ============================================================ */
 
 .container {
 
-    width:
-        100%;
+    width: 100%;
 
-    max-width:
-        1800px;
+    max-width: 1800px;
 
-    margin:
-        0 auto;
+    margin: 0 auto;
 
-    padding:
-        20px;
+    padding: 20px;
 }
 
 
@@ -168,8 +154,7 @@ header h1 {
 
 .telemetry-grid {
 
-    display:
-        grid;
+    display: grid;
 
     grid-template-columns:
         repeat(
@@ -177,125 +162,228 @@ header h1 {
             minmax(150px, 1fr)
         );
 
-    gap:
-        15px;
+    gap: 15px;
 
-    margin-bottom:
-        20px;
+    margin-bottom: 20px;
 }
 
 
 .card {
 
-    background:
-        #1f2937;
+    background: #1f2937;
 
-    padding:
-        18px;
+    padding: 18px;
 
-    border-radius:
-        10px;
+    border-radius: 10px;
 
-    border:
-        1px solid #374151;
+    border: 1px solid #374151;
 }
 
 
 .card-title {
 
-    color:
-        #9ca3af;
+    color: #9ca3af;
 
-    font-size:
-        13px;
+    font-size: 13px;
 
-    margin-bottom:
-        8px;
+    margin-bottom: 8px;
 }
 
 
 .card-value {
 
-    font-size:
-        28px;
+    font-size: 28px;
 
-    font-weight:
-        bold;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
+    font-weight: bold;
 }
 
 
 .coordinate-value {
 
-    font-size:
-        22px;
+    font-size: 22px;
 }
 
 
 .unit {
 
-    font-size:
-        14px;
+    font-size: 14px;
 
-    font-weight:
-        normal;
+    font-weight: normal;
 
-    color:
-        #9ca3af;
+    color: #9ca3af;
 }
 
 
 
 /* ============================================================
-   Main display
+   Recording / Replay
+   ============================================================ */
 
-   Left  = map
-   Right = detected object list
+.control-panel {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 2fr;
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+
+.control-section {
+
+    background: #1f2937;
+
+    border: 1px solid #374151;
+
+    border-radius: 10px;
+
+    padding: 15px;
+}
+
+
+.control-title {
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    margin-bottom: 12px;
+}
+
+
+.button-row {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    align-items: center;
+}
+
+
+.button {
+
+    display: inline-block;
+
+    border: 1px solid #4b5563;
+
+    background: #374151;
+
+    color: #f9fafb;
+
+    padding: 8px 13px;
+
+    border-radius: 6px;
+
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+
+.button:hover:not(:disabled) {
+
+    background: #4b5563;
+}
+
+
+.button:disabled {
+
+    opacity: 0.4;
+
+    cursor: not-allowed;
+}
+
+
+.file-button {
+
+    user-select: none;
+}
+
+
+.speed-select {
+
+    padding: 8px;
+
+    background: #111827;
+
+    color: #f3f4f6;
+
+    border: 1px solid #4b5563;
+
+    border-radius: 6px;
+}
+
+
+.control-info {
+
+    margin-top: 10px;
+
+    color: #9ca3af;
+
+    font-size: 13px;
+}
+
+
+
+/* ============================================================
+   Replay slider
+   ============================================================ */
+
+.replay-slider-row {
+
+    margin-top: 15px;
+}
+
+
+#replaySlider {
+
+    width: 100%;
+
+    cursor: pointer;
+}
+
+
+
+/* ============================================================
+   Main map + object layout
    ============================================================ */
 
 .main-display {
 
-    display:
-        grid;
+    display: grid;
 
     grid-template-columns:
         minmax(0, 3fr)
         minmax(320px, 1fr);
 
-    gap:
-        15px;
+    gap: 15px;
 
-    height:
-        650px;
+    height: 650px;
 
-    margin-bottom:
-        20px;
+    margin-bottom: 20px;
 }
 
 
 
 /* ============================================================
-   Common panel header
+   Panel header
    ============================================================ */
 
 .panel-header {
 
-    padding:
-        14px 15px;
+    padding: 14px 15px;
 
-    font-size:
-        16px;
+    font-size: 16px;
 
-    font-weight:
-        bold;
+    font-weight: bold;
 
-    border-bottom:
-        1px solid #374151;
+    border-bottom: 1px solid #374151;
 }
 
 
@@ -306,52 +394,39 @@ header h1 {
 
 .map-panel {
 
-    min-width:
-        0;
+    min-width: 0;
 
-    display:
-        flex;
+    display: flex;
 
-    flex-direction:
-        column;
+    flex-direction: column;
 
-    background:
-        #1f2937;
+    background: #1f2937;
 
-    border:
-        1px solid #374151;
+    border: 1px solid #374151;
 
-    border-radius:
-        10px;
+    border-radius: 10px;
 
-    overflow:
-        hidden;
+    overflow: hidden;
 }
 
 
 .map-content {
 
-    flex:
-        1;
+    flex: 1;
 
-    padding:
-        10px;
+    min-height: 0;
 
-    min-height:
-        0;
+    padding: 10px;
 }
 
 
 #map {
 
-    width:
-        100%;
+    width: 100%;
 
-    height:
-        100%;
+    height: 100%;
 
-    border-radius:
-        7px;
+    border-radius: 7px;
 }
 
 
@@ -362,258 +437,156 @@ header h1 {
 
 .object-panel {
 
-    min-width:
-        0;
+    min-width: 0;
 
-    display:
-        flex;
+    display: flex;
 
-    flex-direction:
-        column;
+    flex-direction: column;
 
-    background:
-        #1f2937;
+    background: #1f2937;
 
-    border:
-        1px solid #374151;
+    border: 1px solid #374151;
 
-    border-radius:
-        10px;
+    border-radius: 10px;
 
-    overflow:
-        hidden;
+    overflow: hidden;
 }
 
 
 .object-panel-header {
 
-    padding:
-        14px 15px;
+    padding: 14px 15px;
 
-    display:
-        flex;
+    display: flex;
 
-    justify-content:
-        space-between;
+    justify-content: space-between;
 
-    align-items:
-        center;
+    align-items: center;
 
-    gap:
-        10px;
+    font-size: 16px;
 
-    font-size:
-        16px;
+    font-weight: bold;
 
-    font-weight:
-        bold;
-
-    border-bottom:
-        1px solid #374151;
+    border-bottom: 1px solid #374151;
 }
 
 
 .object-count-badge {
 
-    min-width:
-        30px;
+    min-width: 30px;
 
-    padding:
-        4px 9px;
+    padding: 4px 9px;
 
-    text-align:
-        center;
+    text-align: center;
 
-    background:
-        #374151;
+    background: #374151;
 
-    border-radius:
-        15px;
+    border-radius: 15px;
 
-    font-size:
-        13px;
+    font-size: 13px;
 }
 
 
 
 /* ============================================================
-   Scrollable object list
+   Object list
    ============================================================ */
 
 .object-list {
 
-    flex:
-        1;
+    flex: 1;
 
-    min-height:
-        0;
+    min-height: 0;
 
-    overflow-y:
-        auto;
+    overflow-y: auto;
 
-    padding:
-        10px;
+    padding: 10px;
 }
 
-
-
-/* ============================================================
-   Individual detected object
-   ============================================================ */
 
 .object-item {
 
-    background:
-        #111827;
+    background: #111827;
 
-    border:
-        1px solid #374151;
+    border: 1px solid #374151;
 
-    border-radius:
-        8px;
+    border-radius: 8px;
 
-    padding:
-        12px;
+    padding: 12px;
 
-    margin-bottom:
-        10px;
-}
-
-
-.object-item:last-child {
-
-    margin-bottom:
-        0;
+    margin-bottom: 10px;
 }
 
 
 .object-item-header {
 
-    display:
-        flex;
+    display: flex;
 
-    justify-content:
-        space-between;
+    justify-content: space-between;
 
-    align-items:
-        center;
+    align-items: center;
 
-    gap:
-        10px;
-
-    margin-bottom:
-        10px;
+    margin-bottom: 10px;
 }
 
 
 .object-type {
 
-    font-size:
-        16px;
+    font-size: 16px;
 
-    font-weight:
-        bold;
+    font-weight: bold;
 
-    text-transform:
-        uppercase;
+    text-transform: uppercase;
 }
 
 
 .object-id {
 
-    color:
-        #93c5fd;
+    color: #93c5fd;
 
-    font-size:
-        14px;
+    font-size: 14px;
 
-    font-weight:
-        bold;
-
-    white-space:
-        nowrap;
+    font-weight: bold;
 }
 
 
-
-/* ============================================================
-   Object coordinates
-   ============================================================ */
-
 .object-coordinates {
 
-    display:
-        grid;
+    display: grid;
 
     grid-template-columns:
         1fr 1fr;
 
-    gap:
-        7px 15px;
+    gap: 7px 15px;
 
-    font-size:
-        14px;
+    font-size: 14px;
 }
 
 
 .coordinate-label {
 
-    color:
-        #9ca3af;
+    color: #9ca3af;
 }
 
 
 .no-objects {
 
-    color:
-        #9ca3af;
+    color: #9ca3af;
 
-    text-align:
-        center;
+    text-align: center;
 
-    padding:
-        40px 10px;
+    padding: 40px 10px;
 }
 
 
 
 /* ============================================================
-   Scrollbar
-   ============================================================ */
-
-.object-list::-webkit-scrollbar {
-
-    width:
-        8px;
-}
-
-
-.object-list::-webkit-scrollbar-track {
-
-    background:
-        #111827;
-}
-
-
-.object-list::-webkit-scrollbar-thumb {
-
-    background:
-        #4b5563;
-
-    border-radius:
-        4px;
-}
-
-
-
-/* ============================================================
-   Information panel
+   Information
    ============================================================ */
 
 .info-panel {
 
-    display:
-        grid;
+    display: grid;
 
     grid-template-columns:
         repeat(
@@ -621,40 +594,25 @@ header h1 {
             1fr
         );
 
-    gap:
-        15px;
+    gap: 15px;
 
-    background:
-        #1f2937;
+    background: #1f2937;
 
-    padding:
-        15px;
+    padding: 15px;
 
-    border:
-        1px solid #374151;
+    border: 1px solid #374151;
 
-    border-radius:
-        10px;
+    border-radius: 10px;
 
-    margin-bottom:
-        20px;
-}
-
-
-.info-item {
-
-    font-size:
-        14px;
+    margin-bottom: 20px;
 }
 
 
 .info-label {
 
-    color:
-        #9ca3af;
+    color: #9ca3af;
 
-    margin-right:
-        5px;
+    margin-right: 5px;
 }
 
 
@@ -665,126 +623,83 @@ header h1 {
 
 .raw-container {
 
-    background:
-        #1f2937;
+    background: #1f2937;
 
-    border:
-        1px solid #374151;
+    border: 1px solid #374151;
 
-    border-radius:
-        10px;
+    border-radius: 10px;
 
-    overflow:
-        hidden;
-
-    margin-bottom:
-        20px;
+    overflow: hidden;
 }
 
 
 #rawTelemetry {
 
-    margin:
-        0;
+    margin: 0;
 
-    padding:
-        15px;
+    padding: 15px;
 
-    min-height:
-        150px;
+    min-height: 150px;
 
-    max-height:
-        400px;
+    max-height: 400px;
 
-    overflow:
-        auto;
+    overflow: auto;
 
-    background:
-        #030712;
+    background: #030712;
 
-    color:
-        #93c5fd;
+    color: #93c5fd;
 
-    font-family:
-        monospace;
+    font-family: monospace;
 
-    font-size:
-        13px;
+    font-size: 13px;
 
-    line-height:
-        1.5;
+    line-height: 1.5;
 }
 
 
 
 /* ============================================================
-   Medium displays
+   Responsive
    ============================================================ */
 
-@media (
-    max-width: 1100px
-) {
+@media (max-width: 1000px) {
 
     .telemetry-grid {
 
         grid-template-columns:
-            repeat(
-                3,
-                1fr
-            );
+            repeat(3, 1fr);
     }
 
 
-    .main-display {
+    .control-panel {
 
         grid-template-columns:
-            minmax(0, 2fr)
-            minmax(300px, 1fr);
+            1fr;
     }
 
 }
 
 
-
-/* ============================================================
-   Tablets / narrow screens
-   ============================================================ */
-
-@media (
-    max-width: 850px
-) {
-
-    .telemetry-grid {
-
-        grid-template-columns:
-            repeat(
-                2,
-                1fr
-            );
-    }
-
+@media (max-width: 850px) {
 
     .main-display {
 
         grid-template-columns:
             1fr;
 
-        height:
-            auto;
+        height: auto;
     }
 
 
     .map-panel {
 
-        height:
-            450px;
+        height: 450px;
     }
 
 
     .object-panel {
 
-        height:
-            500px;
+        height: 500px;
     }
 
 
@@ -797,32 +712,15 @@ header h1 {
 }
 
 
-
-/* ============================================================
-   Mobile
-   ============================================================ */
-
-@media (
-    max-width: 550px
-) {
+@media (max-width: 550px) {
 
     header {
 
-        padding:
-            14px;
+        align-items: flex-start;
 
-        align-items:
-            flex-start;
+        flex-direction: column;
 
-        flex-direction:
-            column;
-    }
-
-
-    .container {
-
-        padding:
-            10px;
+        gap: 10px;
     }
 
 
@@ -830,44 +728,12 @@ header h1 {
 
         grid-template-columns:
             1fr 1fr;
-
-        gap:
-            10px;
     }
 
 
-    .card {
+    .container {
 
-        padding:
-            13px;
-    }
-
-
-    .card-value {
-
-        font-size:
-            22px;
-    }
-
-
-    .coordinate-value {
-
-        font-size:
-            17px;
-    }
-
-
-    .map-panel {
-
-        height:
-            350px;
-    }
-
-
-    .object-panel {
-
-        height:
-            450px;
+        padding: 10px;
     }
 
 }

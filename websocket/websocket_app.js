@@ -12,14 +12,6 @@ const path = require("path");
 
 const app = express();
 
-
-// Serve files from:
-//
-// node_websocket/public/
-//
-// For example:
-// public/index.html
-//
 app.use(
     express.static(
         path.join(__dirname, "..", "public")
@@ -46,7 +38,7 @@ const HANDSHAKE_TIMEOUT_MS = 5000;
 
 
 // ============================================================
-// Health endpoint
+// Health
 // ============================================================
 
 app.get("/health", (req, res) => {
@@ -60,7 +52,7 @@ app.get("/health", (req, res) => {
 
 
 // ============================================================
-// WebSocket connection
+// WebSocket
 // ============================================================
 
 wss.on("connection", (ws, request) => {
@@ -72,36 +64,35 @@ wss.on("connection", (ws, request) => {
     console.log("Connected clients:", wss.clients.size);
 
 
-    // --------------------------------------------------------
-    // Information associated with this WebSocket connection
-    // --------------------------------------------------------
-
     ws.clientRole = null;
     ws.vehicleId = null;
     ws.handshakeComplete = false;
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // Handshake timeout
-    // --------------------------------------------------------
+    // ========================================================
 
-    const handshakeTimer = setTimeout(() => {
+    const handshakeTimer =
+        setTimeout(() => {
 
-        if (!ws.handshakeComplete) {
+            if (!ws.handshakeComplete) {
 
-            console.log("Handshake timeout");
+                console.log(
+                    "Handshake timeout"
+                );
 
-            ws.close(
-                1008,
-                "Handshake timeout"
-            );
-        }
+                ws.close(
+                    1008,
+                    "Handshake timeout"
+                );
+            }
 
-    }, HANDSHAKE_TIMEOUT_MS);
+        }, HANDSHAKE_TIMEOUT_MS);
 
 
     // ========================================================
-    // Incoming WebSocket message
+    // Incoming message
     // ========================================================
 
     ws.on("message", (data, isBinary) => {
@@ -113,14 +104,7 @@ wss.on("connection", (ws, request) => {
 
         if (!ws.handshakeComplete) {
 
-
-            // Handshake must be text JSON
-
             if (isBinary) {
-
-                console.log(
-                    "Handshake must be JSON text"
-                );
 
                 ws.close(
                     1008,
@@ -134,10 +118,6 @@ wss.on("connection", (ws, request) => {
             let handshake;
 
 
-            // ------------------------------------------------
-            // Parse handshake JSON
-            // ------------------------------------------------
-
             try {
 
                 handshake =
@@ -148,10 +128,6 @@ wss.on("connection", (ws, request) => {
             }
             catch (error) {
 
-                console.log(
-                    "Invalid handshake JSON"
-                );
-
                 ws.close(
                     1008,
                     "Invalid handshake JSON"
@@ -160,18 +136,11 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
-
-            // ------------------------------------------------
-            // Validate message type
-            // ------------------------------------------------
 
             if (
-                handshake.type !== "handshake"
+                handshake.type !==
+                "handshake"
             ) {
-
-                console.log(
-                    "Handshake required"
-                );
 
                 ws.close(
                     1008,
@@ -181,20 +150,11 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
-
-            // ------------------------------------------------
-            // Validate role
-            // ------------------------------------------------
 
             if (
                 handshake.role !== "jetson" &&
                 handshake.role !== "browser"
             ) {
-
-                console.log(
-                    "Invalid role:",
-                    handshake.role
-                );
 
                 ws.close(
                     1008,
@@ -205,18 +165,10 @@ wss.on("connection", (ws, request) => {
             }
 
 
-            // ------------------------------------------------
-            // Validate vehicle ID
-            // ------------------------------------------------
-
             if (
                 typeof handshake.vehicleId !== "string" ||
                 handshake.vehicleId.length === 0
             ) {
-
-                console.log(
-                    "Vehicle ID required"
-                );
 
                 ws.close(
                     1008,
@@ -226,10 +178,6 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
-
-            // ------------------------------------------------
-            // Store client information
-            // ------------------------------------------------
 
             ws.clientRole =
                 handshake.role;
@@ -252,25 +200,12 @@ wss.on("connection", (ws, request) => {
             );
 
 
-            // ------------------------------------------------
-            // Send handshake acknowledgement
-            // ------------------------------------------------
-
             ws.send(
                 JSON.stringify({
-
-                    type:
-                        "handshake_ack",
-
-                    status:
-                        "ok",
-
-                    role:
-                        ws.clientRole,
-
-                    vehicleId:
-                        ws.vehicleId
-
+                    type: "handshake_ack",
+                    status: "ok",
+                    role: ws.clientRole,
+                    vehicleId: ws.vehicleId
                 })
             );
 
@@ -279,62 +214,41 @@ wss.on("connection", (ws, request) => {
         }
 
 
-
         // ====================================================
-        // JETSON MESSAGE
+        // JETSON TELEMETRY
         // ====================================================
 
         if (
-            ws.clientRole === "jetson"
+            ws.clientRole ===
+            "jetson"
         ) {
 
             let forwardedClients = 0;
 
 
-            /*
-             * IMPORTANT
-             *
-             * We intentionally DO NOT parse the telemetry.
-             *
-             * The message received from the Jetson is
-             * forwarded unchanged to every browser subscribed
-             * to the same vehicle ID.
-             */
+            wss.clients.forEach(
+                (client) => {
 
+                    if (
+                        client !== ws &&
+                        client.readyState === WebSocket.OPEN &&
+                        client.handshakeComplete === true &&
+                        client.clientRole === "browser" &&
+                        client.vehicleId === ws.vehicleId
+                    ) {
 
-            wss.clients.forEach((client) => {
+                        client.send(
+                            data,
+                            {
+                                binary: isBinary
+                            }
+                        );
 
-
-                if (
-                    client !== ws &&
-
-                    client.readyState ===
-                        WebSocket.OPEN &&
-
-                    client.handshakeComplete ===
-                        true &&
-
-                    client.clientRole ===
-                        "browser" &&
-
-                    client.vehicleId ===
-                        ws.vehicleId
-                ) {
-
-
-                    client.send(
-                        data,
-                        {
-                            binary: isBinary
-                        }
-                    );
-
-
-                    forwardedClients++;
+                        forwardedClients++;
+                    }
 
                 }
-
-            });
+            );
 
 
             console.log(
@@ -348,42 +262,26 @@ wss.on("connection", (ws, request) => {
         }
 
 
-
         // ====================================================
-        // BROWSER MESSAGE
+        // Browser messages
         // ====================================================
 
         if (
-            ws.clientRole === "browser"
+            ws.clientRole ===
+            "browser"
         ) {
 
-            /*
-             * Browser is currently receive-only.
-             *
-             * Later we could add commands here:
-             *
-             * start_logging
-             * stop_logging
-             * request_status
-             * change_configuration
-             * etc.
-             */
-
             console.log(
-                `Ignoring message from browser ` +
-                `${ws.vehicleId}`
+                `Ignoring message from browser ${ws.vehicleId}`
             );
 
-
-            return;
         }
 
     });
 
 
-
     // ========================================================
-    // Connection closed
+    // Close
     // ========================================================
 
     ws.on("close", (code, reason) => {
@@ -395,32 +293,26 @@ wss.on("connection", (ws, request) => {
 
         console.log("");
         console.log("Client disconnected");
-
         console.log(
             "Role:",
             ws.clientRole || "unknown"
         );
-
         console.log(
             "Vehicle:",
             ws.vehicleId || "unknown"
         );
-
         console.log(
             "Code:",
             code
         );
 
 
-        if (
-            reason.length > 0
-        ) {
+        if (reason.length > 0) {
 
             console.log(
                 "Reason:",
                 reason.toString()
             );
-
         }
 
 
@@ -432,9 +324,8 @@ wss.on("connection", (ws, request) => {
     });
 
 
-
     // ========================================================
-    // WebSocket error
+    // Error
     // ========================================================
 
     ws.on("error", (error) => {
@@ -450,7 +341,7 @@ wss.on("connection", (ws, request) => {
 
 
 // ============================================================
-// Start server
+// Start
 // ============================================================
 
 server.listen(
@@ -464,11 +355,8 @@ server.listen(
         console.log("======================================");
         console.log(`Port: ${port}`);
         console.log("");
-        console.log("Dashboard:");
-        console.log(`http://localhost:${port}`);
-        console.log("");
-        console.log("Health:");
-        console.log(`http://localhost:${port}/health`);
+        console.log(`Dashboard: http://localhost:${port}`);
+        console.log(`Health:    http://localhost:${port}/health`);
         console.log("");
         console.log("Waiting for connections...");
         console.log("");
