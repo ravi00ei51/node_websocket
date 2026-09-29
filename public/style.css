@@ -9,6 +9,7 @@
 
 html,
 body {
+
     margin: 0;
     padding: 0;
 
@@ -32,9 +33,11 @@ body {
 
 header {
 
+    height: 72px;
+
     background: #1f2937;
 
-    padding: 16px 24px;
+    padding: 14px 22px;
 
     display: flex;
 
@@ -65,8 +68,6 @@ header h1 {
 .header-status {
 
     display: flex;
-
-    align-items: center;
 
     gap: 10px;
 }
@@ -132,7 +133,195 @@ header h1 {
 
 
 /* ============================================================
-   Container
+   Main application layout
+   ============================================================ */
+
+.application-layout {
+
+    display: grid;
+
+    grid-template-columns:
+        250px minmax(0, 1fr);
+
+    min-height:
+        calc(100vh - 72px);
+}
+
+
+
+/* ============================================================
+   Vehicle sidebar
+   ============================================================ */
+
+.vehicle-sidebar {
+
+    background: #0f172a;
+
+    border-right:
+        1px solid #374151;
+
+    min-width: 0;
+}
+
+
+.vehicle-sidebar-header {
+
+    height: 52px;
+
+    padding:
+        0 15px;
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    font-weight:
+        bold;
+
+    border-bottom:
+        1px solid #374151;
+}
+
+
+.vehicle-count {
+
+    min-width: 28px;
+
+    text-align: center;
+
+    padding: 4px 8px;
+
+    background: #374151;
+
+    border-radius: 15px;
+
+    font-size: 12px;
+}
+
+
+.vehicle-list {
+
+    padding: 10px;
+
+    overflow-y: auto;
+
+    max-height:
+        calc(100vh - 124px);
+}
+
+
+.vehicle-item {
+
+    padding: 12px;
+
+    margin-bottom: 8px;
+
+    background: #1f2937;
+
+    border:
+        1px solid #374151;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s,
+        border 0.15s;
+}
+
+
+.vehicle-item:hover {
+
+    background: #273449;
+}
+
+
+.vehicle-item.selected {
+
+    border-color: #60a5fa;
+
+    background: #1e3a5f;
+}
+
+
+.vehicle-name {
+
+    font-weight: bold;
+
+    font-size: 14px;
+
+    margin-bottom: 4px;
+}
+
+
+.vehicle-id {
+
+    color: #9ca3af;
+
+    font-size: 12px;
+}
+
+
+.vehicle-status-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-top: 8px;
+
+    color: #9ca3af;
+
+    font-size: 11px;
+}
+
+
+.vehicle-online-dot {
+
+    width: 8px;
+
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+}
+
+
+.vehicle-offline-dot {
+
+    width: 8px;
+
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #ef4444;
+}
+
+
+.no-vehicles {
+
+    padding: 20px 5px;
+
+    text-align: center;
+
+    color: #9ca3af;
+
+    font-size: 13px;
+}
+
+
+
+/* ============================================================
+   Dashboard container
    ============================================================ */
 
 .container {
@@ -144,12 +333,68 @@ header h1 {
     margin: 0 auto;
 
     padding: 20px;
+
+    min-width: 0;
 }
 
 
 
 /* ============================================================
-   Telemetry cards
+   Selected vehicle
+   ============================================================ */
+
+.selected-vehicle-panel {
+
+    display: flex;
+
+    align-items: center;
+
+    background: #1f2937;
+
+    border:
+        1px solid #374151;
+
+    border-radius: 10px;
+
+    padding: 12px 16px;
+
+    margin-bottom: 15px;
+}
+
+
+.selected-vehicle-label {
+
+    color: #9ca3af;
+
+    font-size: 11px;
+
+    text-transform: uppercase;
+}
+
+
+.selected-vehicle-name {
+
+    margin-top: 3px;
+
+    font-size: 19px;
+
+    font-weight: bold;
+}
+
+
+.selected-vehicle-id {
+
+    margin-top: 2px;
+
+    color: #93c5fd;
+
+    font-size: 12px;
+}
+
+
+
+/* ============================================================
+   Telemetry
    ============================================================ */
 
 .telemetry-grid {
@@ -159,7 +404,7 @@ header h1 {
     grid-template-columns:
         repeat(
             5,
-            minmax(150px, 1fr)
+            minmax(120px, 1fr)
         );
 
     gap: 15px;
@@ -176,7 +421,8 @@ header h1 {
 
     border-radius: 10px;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 }
 
 
@@ -200,23 +446,23 @@ header h1 {
 
 .coordinate-value {
 
-    font-size: 22px;
+    font-size: 21px;
 }
 
 
 .unit {
 
+    color: #9ca3af;
+
     font-size: 14px;
 
     font-weight: normal;
-
-    color: #9ca3af;
 }
 
 
 
 /* ============================================================
-   Recording / Replay
+   Controls
    ============================================================ */
 
 .control-panel {
@@ -236,7 +482,8 @@ header h1 {
 
     background: #1f2937;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 
     border-radius: 10px;
 
@@ -260,17 +507,16 @@ header h1 {
 
     flex-wrap: wrap;
 
-    gap: 8px;
-
     align-items: center;
+
+    gap: 8px;
 }
 
 
 .button {
 
-    display: inline-block;
-
-    border: 1px solid #4b5563;
+    border:
+        1px solid #4b5563;
 
     background: #374151;
 
@@ -279,8 +525,6 @@ header h1 {
     padding: 8px 13px;
 
     border-radius: 6px;
-
-    font-size: 13px;
 
     cursor: pointer;
 }
@@ -300,12 +544,6 @@ header h1 {
 }
 
 
-.file-button {
-
-    user-select: none;
-}
-
-
 .speed-select {
 
     padding: 8px;
@@ -314,7 +552,8 @@ header h1 {
 
     color: #f3f4f6;
 
-    border: 1px solid #4b5563;
+    border:
+        1px solid #4b5563;
 
     border-radius: 6px;
 }
@@ -330,10 +569,29 @@ header h1 {
 }
 
 
+.recording-selector {
 
-/* ============================================================
-   Replay slider
-   ============================================================ */
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 12px;
+
+    color: #9ca3af;
+
+    font-size: 13px;
+}
+
+
+#recordingSelect {
+
+    flex: 1;
+
+    min-width: 100px;
+}
+
 
 .replay-slider-row {
 
@@ -344,14 +602,12 @@ header h1 {
 #replaySlider {
 
     width: 100%;
-
-    cursor: pointer;
 }
 
 
 
 /* ============================================================
-   Main map + object layout
+   Main display
    ============================================================ */
 
 .main-display {
@@ -360,7 +616,7 @@ header h1 {
 
     grid-template-columns:
         minmax(0, 3fr)
-        minmax(320px, 1fr);
+        minmax(300px, 1fr);
 
     gap: 15px;
 
@@ -370,11 +626,6 @@ header h1 {
 }
 
 
-
-/* ============================================================
-   Panel header
-   ============================================================ */
-
 .panel-header {
 
     padding: 14px 15px;
@@ -383,7 +634,8 @@ header h1 {
 
     font-weight: bold;
 
-    border-bottom: 1px solid #374151;
+    border-bottom:
+        1px solid #374151;
 }
 
 
@@ -402,7 +654,8 @@ header h1 {
 
     background: #1f2937;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 
     border-radius: 10px;
 
@@ -432,7 +685,7 @@ header h1 {
 
 
 /* ============================================================
-   Object panel
+   Objects
    ============================================================ */
 
 .object-panel {
@@ -445,7 +698,8 @@ header h1 {
 
     background: #1f2937;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 
     border-radius: 10px;
 
@@ -459,7 +713,8 @@ header h1 {
 
     display: flex;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 
     align-items: center;
 
@@ -467,7 +722,8 @@ header h1 {
 
     font-weight: bold;
 
-    border-bottom: 1px solid #374151;
+    border-bottom:
+        1px solid #374151;
 }
 
 
@@ -487,11 +743,6 @@ header h1 {
 }
 
 
-
-/* ============================================================
-   Object list
-   ============================================================ */
-
 .object-list {
 
     flex: 1;
@@ -508,7 +759,8 @@ header h1 {
 
     background: #111827;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 
     border-radius: 8px;
 
@@ -522,7 +774,8 @@ header h1 {
 
     display: flex;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 
     align-items: center;
 
@@ -531,8 +784,6 @@ header h1 {
 
 
 .object-type {
-
-    font-size: 16px;
 
     font-weight: bold;
 
@@ -581,7 +832,7 @@ header h1 {
 
 
 /* ============================================================
-   Information
+   Info
    ============================================================ */
 
 .info-panel {
@@ -589,10 +840,7 @@ header h1 {
     display: grid;
 
     grid-template-columns:
-        repeat(
-            3,
-            1fr
-        );
+        repeat(3, 1fr);
 
     gap: 15px;
 
@@ -600,7 +848,8 @@ header h1 {
 
     padding: 15px;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 
     border-radius: 10px;
 
@@ -618,14 +867,15 @@ header h1 {
 
 
 /* ============================================================
-   Raw telemetry
+   Raw
    ============================================================ */
 
 .raw-container {
 
     background: #1f2937;
 
-    border: 1px solid #374151;
+    border:
+        1px solid #374151;
 
     border-radius: 10px;
 
@@ -662,7 +912,14 @@ header h1 {
    Responsive
    ============================================================ */
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
+
+    .application-layout {
+
+        grid-template-columns:
+            210px minmax(0, 1fr);
+    }
+
 
     .telemetry-grid {
 
@@ -680,7 +937,38 @@ header h1 {
 }
 
 
-@media (max-width: 850px) {
+@media (max-width: 800px) {
+
+    .application-layout {
+
+        display: block;
+    }
+
+
+    .vehicle-sidebar {
+
+        border-right: 0;
+
+        border-bottom:
+            1px solid #374151;
+    }
+
+
+    .vehicle-list {
+
+        display: flex;
+
+        overflow-x: auto;
+
+        max-height: none;
+    }
+
+
+    .vehicle-item {
+
+        min-width: 180px;
+    }
+
 
     .main-display {
 
@@ -693,47 +981,13 @@ header h1 {
 
     .map-panel {
 
-        height: 450px;
+        height: 400px;
     }
 
 
     .object-panel {
 
-        height: 500px;
-    }
-
-
-    .info-panel {
-
-        grid-template-columns:
-            1fr;
-    }
-
-}
-
-
-@media (max-width: 550px) {
-
-    header {
-
-        align-items: flex-start;
-
-        flex-direction: column;
-
-        gap: 10px;
-    }
-
-
-    .telemetry-grid {
-
-        grid-template-columns:
-            1fr 1fr;
-    }
-
-
-    .container {
-
-        padding: 10px;
+        height: 450px;
     }
 
 }

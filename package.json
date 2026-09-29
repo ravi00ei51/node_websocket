@@ -1,15 +1,15 @@
 {
-  "name": "node_websocket",
-  "version": "1.0.0",
-  "description": "Vehicle telemetry WebSocket server",
-  "main": "websocket/websocket_app.js",
+    "name": "node_websocket",
+    "version": "1.0.0",
+    "description": "Multi-vehicle telemetry WebSocket server",
+    "main": "websocket/websocket_app.js",
 
-  "scripts": {
-    "start": "node websocket/websocket_app.js"
-  },
+    "scripts": {
+        "start": "node websocket/websocket_app.js"
+    },
 
-  "dependencies": {
-    "express": "^4.18.2",
-    "ws": "^8.14.2"
-  }
+    "dependencies": {
+        "express": "^4.18.2",
+        "ws": "^8.14.2"
+    }
 }

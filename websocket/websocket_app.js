@@ -20,338 +20,831 @@ app.use(
 
 
 // ============================================================
-// HTTP Server
+// HTTP server
 // ============================================================
 
-const server = http.createServer(app);
+const server =
+    http.createServer(app);
 
 
 // ============================================================
-// WebSocket Server
+// WebSocket server
 // ============================================================
 
-const wss = new WebSocket.Server({
-    server
-});
+const wss =
+    new WebSocket.Server({
+        server
+    });
 
-const HANDSHAKE_TIMEOUT_MS = 5000;
+
+const HANDSHAKE_TIMEOUT_MS =
+    5000;
+
+
+// ============================================================
+// Connected vehicle registry
+//
+// vehicleId ->
+// {
+//     socket,
+//     vehicleId,
+//     vehicleName,
+//     connectedAt
+// }
+// ============================================================
+
+const vehicles =
+    new Map();
+
 
 
 // ============================================================
 // Health
 // ============================================================
 
-app.get("/health", (req, res) => {
+app.get(
+    "/health",
+    (req, res) =>
+    {
 
-    res.json({
-        status: "ok",
-        connectedClients: wss.clients.size
-    });
+        res.json({
 
-});
+            status:
+                "ok",
+
+            connectedClients:
+                wss.clients.size,
+
+            connectedVehicles:
+                vehicles.size
+
+        });
+
+    }
+);
+
 
 
 // ============================================================
-// WebSocket
+// Get vehicle list
 // ============================================================
 
-wss.on("connection", (ws, request) => {
+function getVehicleList()
+{
 
-    console.log("");
-    console.log("======================================");
-    console.log("New WebSocket connection");
-    console.log("Remote:", request.socket.remoteAddress);
-    console.log("Connected clients:", wss.clients.size);
+    const list =
+        [];
 
 
-    ws.clientRole = null;
-    ws.vehicleId = null;
-    ws.handshakeComplete = false;
+    vehicles.forEach(
+        (vehicle) =>
+        {
 
+            list.push({
 
-    // ========================================================
-    // Handshake timeout
-    // ========================================================
+                vehicleId:
+                    vehicle.vehicleId,
 
-    const handshakeTimer =
-        setTimeout(() => {
+                vehicleName:
+                    vehicle.vehicleName,
 
-            if (!ws.handshakeComplete) {
+                connectedAt:
+                    vehicle.connectedAt
 
-                console.log(
-                    "Handshake timeout"
-                );
+            });
 
-                ws.close(
-                    1008,
-                    "Handshake timeout"
-                );
-            }
-
-        }, HANDSHAKE_TIMEOUT_MS);
-
-
-    // ========================================================
-    // Incoming message
-    // ========================================================
-
-    ws.on("message", (data, isBinary) => {
-
-
-        // ====================================================
-        // HANDSHAKE
-        // ====================================================
-
-        if (!ws.handshakeComplete) {
-
-            if (isBinary) {
-
-                ws.close(
-                    1008,
-                    "Handshake must be JSON text"
-                );
-
-                return;
-            }
-
-
-            let handshake;
-
-
-            try {
-
-                handshake =
-                    JSON.parse(
-                        data.toString()
-                    );
-
-            }
-            catch (error) {
-
-                ws.close(
-                    1008,
-                    "Invalid handshake JSON"
-                );
-
-                return;
-            }
-
-
-            if (
-                handshake.type !==
-                "handshake"
-            ) {
-
-                ws.close(
-                    1008,
-                    "Handshake required"
-                );
-
-                return;
-            }
-
-
-            if (
-                handshake.role !== "jetson" &&
-                handshake.role !== "browser"
-            ) {
-
-                ws.close(
-                    1008,
-                    "Invalid role"
-                );
-
-                return;
-            }
-
-
-            if (
-                typeof handshake.vehicleId !== "string" ||
-                handshake.vehicleId.length === 0
-            ) {
-
-                ws.close(
-                    1008,
-                    "Vehicle ID required"
-                );
-
-                return;
-            }
-
-
-            ws.clientRole =
-                handshake.role;
-
-            ws.vehicleId =
-                handshake.vehicleId;
-
-            ws.handshakeComplete =
-                true;
-
-
-            clearTimeout(
-                handshakeTimer
-            );
-
-
-            console.log(
-                `Handshake OK: role=${ws.clientRole}, ` +
-                `vehicle=${ws.vehicleId}`
-            );
-
-
-            ws.send(
-                JSON.stringify({
-                    type: "handshake_ack",
-                    status: "ok",
-                    role: ws.clientRole,
-                    vehicleId: ws.vehicleId
-                })
-            );
-
-
-            return;
         }
+    );
+
+
+    return list;
+}
+
+
+
+// ============================================================
+// Send message safely
+// ============================================================
+
+function sendJson(
+    socket,
+    message
+)
+{
+
+    if (
+        socket.readyState !==
+        WebSocket.OPEN
+    )
+    {
+
+        return;
+    }
+
+
+    socket.send(
+        JSON.stringify(
+            message
+        )
+    );
+
+}
+
+
+
+// ============================================================
+// Broadcast to browsers
+// ============================================================
+
+function broadcastToBrowsers(
+    message
+)
+{
+
+    const json =
+        JSON.stringify(
+            message
+        );
+
+
+    wss.clients.forEach(
+        (client) =>
+        {
+
+            if (
+                client.readyState === WebSocket.OPEN &&
+                client.handshakeComplete === true &&
+                client.clientRole === "browser"
+            )
+            {
+
+                client.send(
+                    json
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+
+// ============================================================
+// Send complete vehicle list to one browser
+// ============================================================
+
+function sendVehicleList(
+    socket
+)
+{
+
+    sendJson(
+        socket,
+        {
+
+            type:
+                "vehicle_list",
+
+            vehicles:
+                getVehicleList()
+
+        }
+    );
+
+}
+
+
+
+// ============================================================
+// WebSocket connection
+// ============================================================
+
+wss.on(
+    "connection",
+    (ws, request) =>
+    {
+
+        console.log("");
+        console.log("======================================");
+        console.log("New WebSocket connection");
+        console.log(
+            "Remote:",
+            request.socket.remoteAddress
+        );
+
+
+        ws.clientRole =
+            null;
+
+        ws.vehicleId =
+            null;
+
+        ws.vehicleName =
+            null;
+
+        ws.handshakeComplete =
+            false;
+
 
 
         // ====================================================
-        // JETSON TELEMETRY
+        // Handshake timeout
         // ====================================================
 
-        if (
-            ws.clientRole ===
-            "jetson"
-        ) {
-
-            let forwardedClients = 0;
-
-
-            wss.clients.forEach(
-                (client) => {
+        const handshakeTimer =
+            setTimeout(
+                () =>
+                {
 
                     if (
-                        client !== ws &&
-                        client.readyState === WebSocket.OPEN &&
-                        client.handshakeComplete === true &&
-                        client.clientRole === "browser" &&
-                        client.vehicleId === ws.vehicleId
-                    ) {
+                        !ws.handshakeComplete
+                    )
+                    {
 
-                        client.send(
-                            data,
+                        console.log(
+                            "Handshake timeout"
+                        );
+
+
+                        ws.close(
+                            1008,
+                            "Handshake timeout"
+                        );
+
+                    }
+
+                },
+                HANDSHAKE_TIMEOUT_MS
+            );
+
+
+
+        // ====================================================
+        // Incoming message
+        // ====================================================
+
+        ws.on(
+            "message",
+            (data, isBinary) =>
+            {
+
+                // ============================================
+                // HANDSHAKE
+                // ============================================
+
+                if (
+                    !ws.handshakeComplete
+                )
+                {
+
+                    if (isBinary)
+                    {
+
+                        ws.close(
+                            1008,
+                            "Handshake must be JSON"
+                        );
+
+                        return;
+                    }
+
+
+                    let handshake;
+
+
+                    try
+                    {
+
+                        handshake =
+                            JSON.parse(
+                                data.toString()
+                            );
+
+                    }
+                    catch
+                    {
+
+                        ws.close(
+                            1008,
+                            "Invalid handshake JSON"
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        handshake.type !==
+                        "handshake"
+                    )
+                    {
+
+                        ws.close(
+                            1008,
+                            "Handshake required"
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        handshake.role !== "jetson" &&
+                        handshake.role !== "browser"
+                    )
+                    {
+
+                        ws.close(
+                            1008,
+                            "Invalid role"
+                        );
+
+                        return;
+                    }
+
+
+                    // ========================================
+                    // JETSON HANDSHAKE
+                    // ========================================
+
+                    if (
+                        handshake.role ===
+                        "jetson"
+                    )
+                    {
+
+                        if (
+                            typeof handshake.vehicleId !== "string" ||
+                            handshake.vehicleId.length === 0
+                        )
+                        {
+
+                            ws.close(
+                                1008,
+                                "Vehicle ID required"
+                            );
+
+                            return;
+                        }
+
+
+                        ws.clientRole =
+                            "jetson";
+
+
+                        ws.vehicleId =
+                            handshake.vehicleId;
+
+
+                        ws.vehicleName =
+                            (
+                                typeof handshake.vehicleName === "string" &&
+                                handshake.vehicleName.length > 0
+                            )
+                                ? handshake.vehicleName
+                                : handshake.vehicleId;
+
+
+                        ws.handshakeComplete =
+                            true;
+
+
+                        clearTimeout(
+                            handshakeTimer
+                        );
+
+
+                        // ------------------------------------
+                        // Replace previous connection
+                        // ------------------------------------
+
+                        const previousVehicle =
+                            vehicles.get(
+                                ws.vehicleId
+                            );
+
+
+                        if (
+                            previousVehicle &&
+                            previousVehicle.socket !== ws
+                        )
+                        {
+
+                            console.log(
+                                `Replacing previous connection for ${ws.vehicleId}`
+                            );
+
+
+                            previousVehicle.socket.close(
+                                1000,
+                                "Replaced by new connection"
+                            );
+
+                        }
+
+
+                        const vehicle = {
+
+                            socket:
+                                ws,
+
+                            vehicleId:
+                                ws.vehicleId,
+
+                            vehicleName:
+                                ws.vehicleName,
+
+                            connectedAt:
+                                new Date().toISOString()
+
+                        };
+
+
+                        vehicles.set(
+                            ws.vehicleId,
+                            vehicle
+                        );
+
+
+                        console.log(
+                            `Jetson connected: ` +
+                            `${ws.vehicleId} ` +
+                            `(${ws.vehicleName})`
+                        );
+
+
+                        sendJson(
+                            ws,
                             {
-                                binary: isBinary
+
+                                type:
+                                    "handshake_ack",
+
+                                status:
+                                    "ok",
+
+                                role:
+                                    "jetson",
+
+                                vehicleId:
+                                    ws.vehicleId
+
                             }
                         );
 
-                        forwardedClients++;
+
+                        // Tell all dashboards
+
+                        broadcastToBrowsers(
+                            {
+
+                                type:
+                                    "vehicle_connected",
+
+                                vehicle:
+                                    {
+
+                                        vehicleId:
+                                            vehicle.vehicleId,
+
+                                        vehicleName:
+                                            vehicle.vehicleName,
+
+                                        connectedAt:
+                                            vehicle.connectedAt
+
+                                    }
+
+                            }
+                        );
+
+
+                        return;
+                    }
+
+
+
+                    // ========================================
+                    // BROWSER HANDSHAKE
+                    // ========================================
+
+                    ws.clientRole =
+                        "browser";
+
+
+                    ws.handshakeComplete =
+                        true;
+
+
+                    clearTimeout(
+                        handshakeTimer
+                    );
+
+
+                    console.log(
+                        "Browser dashboard connected"
+                    );
+
+
+                    sendJson(
+                        ws,
+                        {
+
+                            type:
+                                "handshake_ack",
+
+                            status:
+                                "ok",
+
+                            role:
+                                "browser"
+
+                        }
+                    );
+
+
+                    // Immediately give browser all vehicles
+
+                    sendVehicleList(
+                        ws
+                    );
+
+
+                    return;
+                }
+
+
+
+                // ============================================
+                // TELEMETRY FROM JETSON
+                // ============================================
+
+                if (
+                    ws.clientRole ===
+                    "jetson"
+                )
+                {
+
+                    if (isBinary)
+                    {
+
+                        console.log(
+                            `Ignoring binary telemetry from ${ws.vehicleId}`
+                        );
+
+                        return;
+                    }
+
+
+                    let telemetry;
+
+
+                    try
+                    {
+
+                        telemetry =
+                            JSON.parse(
+                                data.toString()
+                            );
+
+                    }
+                    catch
+                    {
+
+                        console.log(
+                            `Invalid telemetry JSON from ${ws.vehicleId}`
+                        );
+
+                        return;
+                    }
+
+
+                    const message = {
+
+                        type:
+                            "telemetry",
+
+                        vehicleId:
+                            ws.vehicleId,
+
+                        vehicleName:
+                            ws.vehicleName,
+
+                        serverReceivedAt:
+                            Date.now(),
+
+                        data:
+                            telemetry
+
+                    };
+
+
+                    let forwardedClients =
+                        0;
+
+
+                    const json =
+                        JSON.stringify(
+                            message
+                        );
+
+
+                    wss.clients.forEach(
+                        (client) =>
+                        {
+
+                            if (
+                                client.readyState === WebSocket.OPEN &&
+                                client.handshakeComplete === true &&
+                                client.clientRole === "browser"
+                            )
+                            {
+
+                                client.send(
+                                    json
+                                );
+
+
+                                forwardedClients++;
+
+                            }
+
+                        }
+                    );
+
+
+                    console.log(
+                        `Telemetry from ${ws.vehicleId}: ` +
+                        `${data.length} bytes -> ` +
+                        `${forwardedClients} browser(s)`
+                    );
+
+
+                    return;
+                }
+
+
+
+                // ============================================
+                // Browser messages
+                // ============================================
+
+                if (
+                    ws.clientRole ===
+                    "browser"
+                )
+                {
+
+                    console.log(
+                        "Ignoring browser message"
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        // ====================================================
+        // Disconnect
+        // ====================================================
+
+        ws.on(
+            "close",
+            (code, reason) =>
+            {
+
+                clearTimeout(
+                    handshakeTimer
+                );
+
+
+                console.log("");
+                console.log(
+                    "Client disconnected"
+                );
+
+                console.log(
+                    "Role:",
+                    ws.clientRole || "unknown"
+                );
+
+                console.log(
+                    "Vehicle:",
+                    ws.vehicleId || "N/A"
+                );
+
+                console.log(
+                    "Code:",
+                    code
+                );
+
+
+                if (
+                    reason.length > 0
+                )
+                {
+
+                    console.log(
+                        "Reason:",
+                        reason.toString()
+                    );
+
+                }
+
+
+                // --------------------------------------------
+                // Remove vehicle only if this socket is still
+                // the registered socket.
+                // --------------------------------------------
+
+                if (
+                    ws.clientRole === "jetson" &&
+                    ws.vehicleId
+                )
+                {
+
+                    const registeredVehicle =
+                        vehicles.get(
+                            ws.vehicleId
+                        );
+
+
+                    if (
+                        registeredVehicle &&
+                        registeredVehicle.socket === ws
+                    )
+                    {
+
+                        vehicles.delete(
+                            ws.vehicleId
+                        );
+
+
+                        console.log(
+                            `Vehicle removed: ${ws.vehicleId}`
+                        );
+
+
+                        broadcastToBrowsers(
+                            {
+
+                                type:
+                                    "vehicle_disconnected",
+
+                                vehicleId:
+                                    ws.vehicleId
+
+                            }
+                        );
+
                     }
 
                 }
-            );
 
+            }
+        );
 
-            console.log(
-                `Telemetry from ${ws.vehicleId}: ` +
-                `${data.length} bytes -> ` +
-                `${forwardedClients} browser(s)`
-            );
-
-
-            return;
-        }
 
 
         // ====================================================
-        // Browser messages
+        // Error
         // ====================================================
 
-        if (
-            ws.clientRole ===
-            "browser"
-        ) {
+        ws.on(
+            "error",
+            (error) =>
+            {
 
-            console.log(
-                `Ignoring message from browser ${ws.vehicleId}`
-            );
+                console.error(
+                    "WebSocket error:",
+                    error.message
+                );
 
-        }
-
-    });
-
-
-    // ========================================================
-    // Close
-    // ========================================================
-
-    ws.on("close", (code, reason) => {
-
-        clearTimeout(
-            handshakeTimer
+            }
         );
 
+    }
+);
 
-        console.log("");
-        console.log("Client disconnected");
-        console.log(
-            "Role:",
-            ws.clientRole || "unknown"
-        );
-        console.log(
-            "Vehicle:",
-            ws.vehicleId || "unknown"
-        );
-        console.log(
-            "Code:",
-            code
-        );
-
-
-        if (reason.length > 0) {
-
-            console.log(
-                "Reason:",
-                reason.toString()
-            );
-        }
-
-
-        console.log(
-            "Connected clients:",
-            wss.clients.size
-        );
-
-    });
-
-
-    // ========================================================
-    // Error
-    // ========================================================
-
-    ws.on("error", (error) => {
-
-        console.error(
-            "WebSocket error:",
-            error.message
-        );
-
-    });
-
-});
 
 
 // ============================================================
-// Start
+// Start server
 // ============================================================
 
 server.listen(
     port,
     "0.0.0.0",
-    () => {
+    () =>
+    {
 
         console.log("");
         console.log("======================================");
-        console.log(" Vehicle Telemetry WebSocket Server");
+        console.log(" Multi-Vehicle Telemetry Server");
         console.log("======================================");
         console.log(`Port: ${port}`);
         console.log("");
