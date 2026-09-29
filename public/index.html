@@ -16,11 +16,15 @@
     </title>
 
 
+    <!-- Leaflet -->
+
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 
+
+    <!-- Dashboard CSS -->
 
     <link
         rel="stylesheet"
@@ -76,14 +80,14 @@
 
 
 <!-- =========================================================
-     Main application
+     Main Application
      ========================================================= -->
 
 <div class="application-layout">
 
 
     <!-- =====================================================
-         Vehicle sidebar
+         Vehicle Sidebar
          ===================================================== -->
 
     <aside class="vehicle-sidebar">
@@ -130,43 +134,13 @@
 
 
         <!-- =================================================
-             Selected vehicle
-             ================================================= -->
-
-        <section class="selected-vehicle-panel">
-
-            <div>
-
-                <div class="selected-vehicle-label">
-                    Selected Vehicle
-                </div>
-
-                <div
-                    id="selectedVehicleName"
-                    class="selected-vehicle-name"
-                >
-                    No vehicle selected
-                </div>
-
-                <div
-                    id="selectedVehicleId"
-                    class="selected-vehicle-id"
-                >
-                    --
-                </div>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- =================================================
-             Telemetry cards
+             Telemetry Cards
              ================================================= -->
 
         <section class="telemetry-grid">
 
+
+            <!-- Frame -->
 
             <div class="card">
 
@@ -184,6 +158,8 @@
             </div>
 
 
+
+            <!-- Speed -->
 
             <div class="card">
 
@@ -207,6 +183,8 @@
 
 
 
+            <!-- Latitude -->
+
             <div class="card">
 
                 <div class="card-title">
@@ -224,6 +202,8 @@
 
 
 
+            <!-- Longitude -->
+
             <div class="card">
 
                 <div class="card-title">
@@ -240,6 +220,8 @@
             </div>
 
 
+
+            <!-- Objects -->
 
             <div class="card">
 
@@ -268,7 +250,9 @@
         <section class="control-panel">
 
 
-            <!-- Recording -->
+            <!-- =============================================
+                 Recording
+                 ============================================= -->
 
             <div class="control-section">
 
@@ -350,7 +334,9 @@
 
 
 
-            <!-- Replay -->
+            <!-- =============================================
+                 Replay
+                 ============================================= -->
 
             <div class="control-section">
 
@@ -360,6 +346,7 @@
 
 
                 <div class="button-row">
+
 
                     <button
                         id="loadReplayButton"
@@ -374,6 +361,7 @@
                         id="previousFrameButton"
                         class="button"
                         disabled
+                        title="Previous frame"
                     >
                         ◀
                     </button>
@@ -392,6 +380,7 @@
                         id="nextFrameButton"
                         class="button"
                         disabled
+                        title="Next frame"
                     >
                         ▶
                     </button>
@@ -473,16 +462,32 @@
 
 
         <!-- =================================================
-             Map + objects
+             Map + Detected Objects
              ================================================= -->
 
         <section class="main-display">
 
 
+            <!-- =============================================
+                 Map
+                 ============================================= -->
+
             <div class="map-panel">
 
+
                 <div class="panel-header">
-                    Vehicle Location
+
+                    <span>
+                        Vehicle Location
+                    </span>
+
+
+                    <span
+                        id="mapVehicleName"
+                        class="panel-secondary"
+                    >
+                    </span>
+
                 </div>
 
 
@@ -492,9 +497,14 @@
 
                 </div>
 
+
             </div>
 
 
+
+            <!-- =============================================
+                 Detected Objects
+                 ============================================= -->
 
             <div class="object-panel">
 
@@ -586,7 +596,7 @@
 
 
         <!-- =================================================
-             Raw telemetry
+             Raw Telemetry
              ================================================= -->
 
         <section class="raw-container">
@@ -594,6 +604,7 @@
             <div class="panel-header">
                 Raw Telemetry
             </div>
+
 
             <pre id="rawTelemetry">Waiting for telemetry...</pre>
 
@@ -606,6 +617,10 @@
 </div>
 
 
+
+<!-- =========================================================
+     JavaScript
+     ========================================================= -->
 
 <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

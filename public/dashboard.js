@@ -1,5 +1,5 @@
 // ============================================================
-// WebSocket
+// WebSocket Configuration
 // ============================================================
 
 const wsProtocol =
@@ -26,8 +26,20 @@ let totalMessageCount =
 
 
 // ============================================================
-// Vehicle state
+// Vehicle State
 // ============================================================
+
+/*
+ * vehicleId ->
+ *
+ * {
+ *     vehicleId,
+ *     vehicleName,
+ *     connected,
+ *     lastUpdate,
+ *     telemetry
+ * }
+ */
 
 const vehicles =
     new Map();
@@ -39,7 +51,7 @@ let selectedVehicleId =
 
 
 // ============================================================
-// IndexedDB
+// IndexedDB Configuration
 // ============================================================
 
 const DB_NAME =
@@ -64,7 +76,7 @@ let database =
 
 
 // ============================================================
-// Recording
+// Recording State
 // ============================================================
 
 let isRecording =
@@ -85,7 +97,7 @@ let currentRecordingFrameCount =
 
 
 // ============================================================
-// Replay
+// Replay State
 // ============================================================
 
 let replayRecordingId =
@@ -121,7 +133,10 @@ const map =
     L.map(
         "map"
     ).setView(
-        [54.7, -6.2],
+        [
+            54.7,
+            -6.2
+        ],
         10
     );
 
@@ -152,7 +167,7 @@ let firstPosition =
 
 
 // ============================================================
-// UI
+// UI References
 // ============================================================
 
 const startRecordingButton =
@@ -229,7 +244,7 @@ const replaySpeed =
 
 
 // ============================================================
-// IndexedDB
+// Open IndexedDB
 // ============================================================
 
 function openDatabase()
@@ -246,6 +261,10 @@ function openDatabase()
                 );
 
 
+            // =================================================
+            // Database Upgrade
+            // =================================================
+
             request.onupgradeneeded =
                 function (event)
                 {
@@ -254,9 +273,9 @@ function openDatabase()
                         event.target.result;
 
 
-                    // ========================================
-                    // Recordings
-                    // ========================================
+                    // =========================================
+                    // Recordings Store
+                    // =========================================
 
                     if (
                         !db.objectStoreNames.contains(
@@ -284,17 +303,19 @@ function openDatabase()
                             "vehicleId",
                             "vehicleId",
                             {
+
                                 unique:
                                     false
+
                             }
                         );
 
                     }
 
 
-                    // ========================================
-                    // Frames
-                    // ========================================
+                    // =========================================
+                    // Frames Store
+                    // =========================================
 
                     if (
                         !db.objectStoreNames.contains(
@@ -322,8 +343,10 @@ function openDatabase()
                             "recordingId",
                             "recordingId",
                             {
+
                                 unique:
                                     false
+
                             }
                         );
 
@@ -335,8 +358,10 @@ function openDatabase()
                                 "frameIndex"
                             ],
                             {
+
                                 unique:
                                     true
+
                             }
                         );
 
@@ -344,6 +369,10 @@ function openDatabase()
 
                 };
 
+
+            // =================================================
+            // Open Success
+            // =================================================
 
             request.onsuccess =
                 function ()
@@ -353,6 +382,11 @@ function openDatabase()
                         request.result;
 
 
+                    console.log(
+                        "IndexedDB opened"
+                    );
+
+
                     resolve(
                         database
                     );
@@ -360,9 +394,19 @@ function openDatabase()
                 };
 
 
+            // =================================================
+            // Open Error
+            // =================================================
+
             request.onerror =
                 function ()
                 {
+
+                    console.error(
+                        "IndexedDB error:",
+                        request.error
+                    );
+
 
                     reject(
                         request.error
@@ -378,7 +422,7 @@ function openDatabase()
 
 
 // ============================================================
-// Create recording
+// Create Recording
 // ============================================================
 
 function createRecording(
@@ -405,38 +449,49 @@ function createRecording(
 
 
             const request =
-                store.add({
+                store.add(
+                    {
 
-                    vehicleId:
-                        vehicleId,
+                        vehicleId:
+                            vehicleId,
 
-                    vehicleName:
-                        vehicleName,
+                        vehicleName:
+                            vehicleName,
 
-                    startedAt:
-                        new Date().toISOString(),
+                        startedAt:
+                            new Date()
+                                .toISOString(),
 
-                    stoppedAt:
-                        null,
+                        stoppedAt:
+                            null,
 
-                    frameCount:
-                        0
+                        frameCount:
+                            0
 
-                });
+                    }
+                );
 
 
             request.onsuccess =
-                () =>
+                function ()
+                {
+
                     resolve(
                         request.result
                     );
 
+                };
+
 
             request.onerror =
-                () =>
+                function ()
+                {
+
                     reject(
                         request.error
                     );
+
+                };
 
         }
     );
@@ -446,7 +501,7 @@ function createRecording(
 
 
 // ============================================================
-// Store frame
+// Store Telemetry Frame
 // ============================================================
 
 function storeFrame(
@@ -475,32 +530,43 @@ function storeFrame(
 
 
             const request =
-                store.add({
+                store.add(
+                    {
 
-                    recordingId:
-                        recordingId,
+                        recordingId:
+                            recordingId,
 
-                    frameIndex:
-                        frameIndex,
+                        frameIndex:
+                            frameIndex,
 
-                    receivedAt:
-                        receivedAt,
+                        receivedAt:
+                            receivedAt,
 
-                    data:
-                        telemetry
+                        data:
+                            telemetry
 
-                });
+                    }
+                );
 
 
             request.onsuccess =
-                () => resolve();
+                function ()
+                {
+
+                    resolve();
+
+                };
 
 
             request.onerror =
-                () =>
+                function ()
+                {
+
                     reject(
                         request.error
                     );
+
+                };
 
         }
     );
@@ -510,7 +576,7 @@ function storeFrame(
 
 
 // ============================================================
-// Finish recording
+// Finish Recording
 // ============================================================
 
 function finishRecording(
@@ -559,12 +625,14 @@ function finishRecording(
                             )
                         );
 
+
                         return;
                     }
 
 
                     recording.stoppedAt =
-                        new Date().toISOString();
+                        new Date()
+                            .toISOString();
 
 
                     recording.frameCount =
@@ -578,23 +646,36 @@ function finishRecording(
 
 
                     putRequest.onsuccess =
-                        () => resolve();
+                        function ()
+                        {
+
+                            resolve();
+
+                        };
 
 
                     putRequest.onerror =
-                        () =>
+                        function ()
+                        {
+
                             reject(
                                 putRequest.error
                             );
+
+                        };
 
                 };
 
 
             request.onerror =
-                () =>
+                function ()
+                {
+
                     reject(
                         request.error
                     );
+
+                };
 
         }
     );
@@ -604,7 +685,7 @@ function finishRecording(
 
 
 // ============================================================
-// Get recordings for vehicle
+// Get Recordings For Vehicle
 // ============================================================
 
 function getRecordingsForVehicle(
@@ -630,11 +711,8 @@ function getRecordingsForVehicle(
 
 
             /*
-             * getAll() is deliberately used here rather than
-             * depending on the vehicleId index.
-             *
-             * This also works if the database was created by
-             * the earlier version of the dashboard.
+             * getAll() keeps compatibility with an IndexedDB
+             * database created by the earlier dashboard.
              */
 
             const request =
@@ -661,10 +739,14 @@ function getRecordingsForVehicle(
 
 
             request.onerror =
-                () =>
+                function ()
+                {
+
                     reject(
                         request.error
                     );
+
+                };
 
         }
     );
@@ -674,7 +756,7 @@ function getRecordingsForVehicle(
 
 
 // ============================================================
-// Get recording
+// Get Recording Metadata
 // ============================================================
 
 function getRecording(
@@ -693,28 +775,38 @@ function getRecording(
                 );
 
 
+            const store =
+                transaction.objectStore(
+                    RECORDINGS_STORE
+                );
+
+
             const request =
-                transaction
-                    .objectStore(
-                        RECORDINGS_STORE
-                    )
-                    .get(
-                        recordingId
-                    );
+                store.get(
+                    recordingId
+                );
 
 
             request.onsuccess =
-                () =>
+                function ()
+                {
+
                     resolve(
                         request.result
                     );
 
+                };
+
 
             request.onerror =
-                () =>
+                function ()
+                {
+
                     reject(
                         request.error
                     );
+
+                };
 
         }
     );
@@ -724,7 +816,7 @@ function getRecording(
 
 
 // ============================================================
-// Get frame
+// Get One Frame
 // ============================================================
 
 function getFrame(
@@ -744,14 +836,16 @@ function getFrame(
                 );
 
 
+            const store =
+                transaction.objectStore(
+                    FRAMES_STORE
+                );
+
+
             const index =
-                transaction
-                    .objectStore(
-                        FRAMES_STORE
-                    )
-                    .index(
-                        "recordingFrame"
-                    );
+                store.index(
+                    "recordingFrame"
+                );
 
 
             const request =
@@ -764,17 +858,25 @@ function getFrame(
 
 
             request.onsuccess =
-                () =>
+                function ()
+                {
+
                     resolve(
                         request.result
                     );
 
+                };
+
 
             request.onerror =
-                () =>
+                function ()
+                {
+
                     reject(
                         request.error
                     );
+
+                };
 
         }
     );
@@ -784,7 +886,7 @@ function getFrame(
 
 
 // ============================================================
-// Vehicle list
+// Handle Vehicle List
 // ============================================================
 
 function handleVehicleList(
@@ -814,26 +916,27 @@ function handleVehicleList(
             if (!vehicle)
             {
 
-                vehicle = {
+                vehicle =
+                    {
 
-                    vehicleId:
-                        vehicleInfo.vehicleId,
+                        vehicleId:
+                            vehicleInfo.vehicleId,
 
-                    vehicleName:
-                        vehicleInfo.vehicleName
-                        ??
-                        vehicleInfo.vehicleId,
+                        vehicleName:
+                            vehicleInfo.vehicleName
+                            ??
+                            vehicleInfo.vehicleId,
 
-                    connected:
-                        true,
+                        connected:
+                            true,
 
-                    lastUpdate:
-                        null,
+                        lastUpdate:
+                            null,
 
-                    telemetry:
-                        null
+                        telemetry:
+                            null
 
-                };
+                    };
 
 
                 vehicles.set(
@@ -860,7 +963,10 @@ function handleVehicleList(
     );
 
 
-    // Anything not returned by server is offline
+    /*
+     * Vehicles we previously knew about but that aren't in
+     * the server list are shown as offline.
+     */
 
     vehicles.forEach(
         vehicle =>
@@ -882,22 +988,24 @@ function handleVehicleList(
     );
 
 
+    // ========================================================
     // Auto-select first connected vehicle
+    // ========================================================
 
     if (
         selectedVehicleId === null
     )
     {
 
-        const first =
+        const firstVehicle =
             serverVehicles[0];
 
 
-        if (first)
+        if (firstVehicle)
         {
 
             selectVehicle(
-                first.vehicleId
+                firstVehicle.vehicleId
             );
 
         }
@@ -912,7 +1020,7 @@ function handleVehicleList(
 
 
 // ============================================================
-// Vehicle connected
+// Vehicle Connected
 // ============================================================
 
 function handleVehicleConnected(
@@ -929,26 +1037,27 @@ function handleVehicleConnected(
     if (!vehicle)
     {
 
-        vehicle = {
+        vehicle =
+            {
 
-            vehicleId:
-                vehicleInfo.vehicleId,
+                vehicleId:
+                    vehicleInfo.vehicleId,
 
-            vehicleName:
-                vehicleInfo.vehicleName
-                ??
-                vehicleInfo.vehicleId,
+                vehicleName:
+                    vehicleInfo.vehicleName
+                    ??
+                    vehicleInfo.vehicleId,
 
-            connected:
-                true,
+                connected:
+                    true,
 
-            lastUpdate:
-                null,
+                lastUpdate:
+                    null,
 
-            telemetry:
-                null
+                telemetry:
+                    null
 
-        };
+            };
 
 
         vehicles.set(
@@ -991,7 +1100,7 @@ function handleVehicleConnected(
 
 
 // ============================================================
-// Vehicle disconnected
+// Vehicle Disconnected
 // ============================================================
 
 function handleVehicleDisconnected(
@@ -1021,7 +1130,7 @@ function handleVehicleDisconnected(
 
 
 // ============================================================
-// Telemetry
+// Handle Telemetry
 // ============================================================
 
 async function handleTelemetry(
@@ -1039,29 +1148,34 @@ async function handleTelemetry(
         );
 
 
+    // ========================================================
+    // Vehicle may send telemetry before vehicle list arrives
+    // ========================================================
+
     if (!vehicle)
     {
 
-        vehicle = {
+        vehicle =
+            {
 
-            vehicleId:
-                vehicleId,
+                vehicleId:
+                    vehicleId,
 
-            vehicleName:
-                message.vehicleName
-                ??
-                vehicleId,
+                vehicleName:
+                    message.vehicleName
+                    ??
+                    vehicleId,
 
-            connected:
-                true,
+                connected:
+                    true,
 
-            lastUpdate:
-                null,
+                lastUpdate:
+                    null,
 
-            telemetry:
-                null
+                telemetry:
+                    null
 
-        };
+            };
 
 
         vehicles.set(
@@ -1097,8 +1211,8 @@ async function handleTelemetry(
     // ========================================================
     // Recording
     //
-    // ONLY record telemetry belonging to the vehicle that
-    // was selected when recording started.
+    // Only record the vehicle that was selected when the user
+    // pressed Start Recording.
     // ========================================================
 
     if (
@@ -1108,7 +1222,10 @@ async function handleTelemetry(
     {
 
         const frameIndex =
-            currentRecordingFrameCount++;
+            currentRecordingFrameCount;
+
+
+        currentRecordingFrameCount++;
 
 
         try
@@ -1118,7 +1235,8 @@ async function handleTelemetry(
                 currentRecordingId,
                 frameIndex,
                 message.serverReceivedAt
-                    ?? Date.now(),
+                ??
+                Date.now(),
                 message.data
             );
 
@@ -1146,7 +1264,11 @@ async function handleTelemetry(
 
 
     // ========================================================
-    // Display only selected vehicle
+    // Live Display
+    //
+    // Only selected vehicle updates the visible dashboard.
+    // During replay live data continues arriving but doesn't
+    // overwrite the replay display.
     // ========================================================
 
     if (
@@ -1169,7 +1291,7 @@ async function handleTelemetry(
 
 
 // ============================================================
-// Draw vehicle list
+// Draw Vehicle List
 // ============================================================
 
 function updateVehicleList()
@@ -1190,6 +1312,10 @@ function updateVehicleList()
     ).textContent =
         vehicles.size;
 
+
+    // ========================================================
+    // No vehicles
+    // ========================================================
 
     if (
         vehicles.size === 0
@@ -1219,6 +1345,15 @@ function updateVehicleList()
     }
 
 
+
+    // ========================================================
+    // Sort Vehicles
+    //
+    // 1. Selected vehicle
+    // 2. Connected vehicles
+    // 3. Alphabetical
+    // ========================================================
+
     const sorted =
         Array.from(
             vehicles.values()
@@ -1228,6 +1363,32 @@ function updateVehicleList()
     sorted.sort(
         (a, b) =>
         {
+
+            // Selected vehicle always first
+
+            if (
+                a.vehicleId ===
+                selectedVehicleId
+            )
+            {
+
+                return -1;
+
+            }
+
+
+            if (
+                b.vehicleId ===
+                selectedVehicleId
+            )
+            {
+
+                return 1;
+
+            }
+
+
+            // Connected before offline
 
             if (
                 a.connected !==
@@ -1242,6 +1403,8 @@ function updateVehicleList()
             }
 
 
+            // Alphabetical
+
             return a.vehicleName.localeCompare(
                 b.vehicleName
             );
@@ -1250,9 +1413,19 @@ function updateVehicleList()
     );
 
 
+
+    // ========================================================
+    // Create Vehicle Items
+    // ========================================================
+
     sorted.forEach(
         vehicle =>
         {
+
+            const selected =
+                vehicle.vehicleId ===
+                selectedVehicleId;
+
 
             const item =
                 document.createElement(
@@ -1264,10 +1437,7 @@ function updateVehicleList()
                 "vehicle-item";
 
 
-            if (
-                vehicle.vehicleId ===
-                selectedVehicleId
-            )
+            if (selected)
             {
 
                 item.classList.add(
@@ -1277,14 +1447,28 @@ function updateVehicleList()
             }
 
 
+
+            // =================================================
+            // Click
+            // =================================================
+
             item.addEventListener(
                 "click",
-                () =>
+                function ()
+                {
+
                     selectVehicle(
                         vehicle.vehicleId
-                    )
+                    );
+
+                }
             );
 
+
+
+            // =================================================
+            // Vehicle Name
+            // =================================================
 
             const name =
                 document.createElement(
@@ -1305,6 +1489,40 @@ function updateVehicleList()
             );
 
 
+
+            // =================================================
+            // Selected Badge
+            // =================================================
+
+            if (selected)
+            {
+
+                const badge =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                badge.className =
+                    "selected-vehicle-badge";
+
+
+                badge.textContent =
+                    "SELECTED";
+
+
+                item.appendChild(
+                    badge
+                );
+
+            }
+
+
+
+            // =================================================
+            // Vehicle ID
+            // =================================================
+
             const id =
                 document.createElement(
                     "div"
@@ -1323,6 +1541,11 @@ function updateVehicleList()
                 id
             );
 
+
+
+            // =================================================
+            // Status
+            // =================================================
 
             const status =
                 document.createElement(
@@ -1351,7 +1574,7 @@ function updateVehicleList()
             );
 
 
-            const text =
+            const statusText =
                 document.createElement(
                     "span"
                 );
@@ -1360,7 +1583,7 @@ function updateVehicleList()
             if (!vehicle.connected)
             {
 
-                text.textContent =
+                statusText.textContent =
                     "Offline";
 
             }
@@ -1369,32 +1592,52 @@ function updateVehicleList()
             )
             {
 
-                text.textContent =
+                statusText.textContent =
                     "Connected";
 
             }
             else
             {
 
+                const elapsed =
+                    Date.now() -
+                    vehicle.lastUpdate;
+
+
                 const seconds =
                     Math.floor(
-                        (
-                            Date.now() -
-                            vehicle.lastUpdate
-                        )
-                        /
-                        1000
+                        elapsed / 1000
                     );
 
 
-                text.textContent =
-                    `${seconds}s ago`;
+                if (
+                    seconds < 60
+                )
+                {
+
+                    statusText.textContent =
+                        `${seconds}s ago`;
+
+                }
+                else
+                {
+
+                    const minutes =
+                        Math.floor(
+                            seconds / 60
+                        );
+
+
+                    statusText.textContent =
+                        `${minutes}m ago`;
+
+                }
 
             }
 
 
             status.appendChild(
-                text
+                statusText
             );
 
 
@@ -1415,7 +1658,7 @@ function updateVehicleList()
 
 
 // ============================================================
-// Select vehicle
+// Select Vehicle
 // ============================================================
 
 async function selectVehicle(
@@ -1433,18 +1676,20 @@ async function selectVehicle(
     }
 
 
-    /*
-     * Do not silently move an active recording to another
-     * vehicle.
-     */
+    // ========================================================
+    // Don't silently switch an active recording
+    // ========================================================
 
     if (isRecording)
     {
 
         const change =
             confirm(
+
                 `Recording ${recordingVehicleId} is active.\n\n` +
+
                 `Stop recording and switch to ${vehicleId}?`
+
             );
 
 
@@ -1452,6 +1697,7 @@ async function selectVehicle(
         {
 
             return;
+
         }
 
 
@@ -1460,8 +1706,18 @@ async function selectVehicle(
     }
 
 
+
+    // ========================================================
+    // Exit Replay
+    // ========================================================
+
     exitReplayMode();
 
+
+
+    // ========================================================
+    // Change Selection
+    // ========================================================
 
     selectedVehicleId =
         vehicleId;
@@ -1481,26 +1737,31 @@ async function selectVehicle(
     {
 
         return;
+
     }
 
 
-    document.getElementById(
-        "selectedVehicleName"
-    ).textContent =
-        vehicle.vehicleName;
 
-
-    document.getElementById(
-        "selectedVehicleId"
-    ).textContent =
-        vehicle.vehicleId;
-
+    // ========================================================
+    // Vehicle Information
+    // ========================================================
 
     document.getElementById(
         "vehicleId"
     ).textContent =
         vehicle.vehicleId;
 
+
+    document.getElementById(
+        "mapVehicleName"
+    ).textContent =
+        vehicle.vehicleName;
+
+
+
+    // ========================================================
+    // Recording
+    // ========================================================
 
     startRecordingButton.disabled =
         false;
@@ -1511,6 +1772,11 @@ async function selectVehicle(
     ).textContent =
         "Not recording";
 
+
+
+    // ========================================================
+    // Show Latest Telemetry
+    // ========================================================
 
     if (
         vehicle.telemetry
@@ -1530,8 +1796,18 @@ async function selectVehicle(
     }
 
 
+
+    // ========================================================
+    // Refresh Recordings For This Vehicle
+    // ========================================================
+
     await refreshRecordingList();
 
+
+
+    // ========================================================
+    // Selected Vehicle Moves To Top
+    // ========================================================
 
     updateVehicleList();
 
@@ -1540,7 +1816,7 @@ async function selectVehicle(
 
 
 // ============================================================
-// Clear dashboard
+// Clear Dashboard
 // ============================================================
 
 function clearDashboard()
@@ -1603,11 +1879,32 @@ function clearDashboard()
 
 
 // ============================================================
-// WebSocket
+// Connect WebSocket
 // ============================================================
 
 function connectWebSocket()
 {
+
+    /*
+     * Prevent multiple simultaneous connection attempts.
+     */
+
+    if (
+        socket &&
+        (
+            socket.readyState ===
+                WebSocket.OPEN
+            ||
+            socket.readyState ===
+                WebSocket.CONNECTING
+        )
+    )
+    {
+
+        return;
+
+    }
+
 
     setConnectionStatus(
         "Connecting...",
@@ -1621,28 +1918,42 @@ function connectWebSocket()
         );
 
 
+
+    // ========================================================
+    // Open
+    // ========================================================
+
     socket.onopen =
         function ()
         {
 
             /*
-             * Browser no longer supplies a vehicleId.
+             * Browser dashboard receives all vehicles.
+             *
+             * It therefore does NOT supply vehicleId.
              */
 
             socket.send(
-                JSON.stringify({
+                JSON.stringify(
+                    {
 
-                    type:
-                        "handshake",
+                        type:
+                            "handshake",
 
-                    role:
-                        "browser"
+                        role:
+                            "browser"
 
-                })
+                    }
+                )
             );
 
         };
 
+
+
+    // ========================================================
+    // Incoming Message
+    // ========================================================
 
     socket.onmessage =
         async function (
@@ -1662,11 +1973,19 @@ function connectWebSocket()
                     );
 
             }
-            catch
+            catch (error)
             {
 
+                console.error(
+                    "Invalid WebSocket JSON:",
+                    error
+                );
+
+
                 return;
+
             }
+
 
 
             switch (
@@ -1674,34 +1993,69 @@ function connectWebSocket()
             )
             {
 
+                // =============================================
+                // Handshake
+                // =============================================
+
                 case "handshake_ack":
 
-                    setConnectionStatus(
-                        "Connected",
-                        "connected"
-                    );
+                    if (
+                        message.status ===
+                        "ok"
+                    )
+                    {
+
+                        setConnectionStatus(
+                            "Connected",
+                            "connected"
+                        );
+
+                    }
 
                     break;
 
+
+
+                // =============================================
+                // Complete Vehicle List
+                // =============================================
 
                 case "vehicle_list":
 
                     handleVehicleList(
                         message.vehicles
-                        ?? []
+                        ??
+                        []
                     );
 
                     break;
 
+
+
+                // =============================================
+                // Vehicle Connected
+                // =============================================
 
                 case "vehicle_connected":
 
-                    handleVehicleConnected(
+                    if (
                         message.vehicle
-                    );
+                    )
+                    {
+
+                        handleVehicleConnected(
+                            message.vehicle
+                        );
+
+                    }
 
                     break;
 
+
+
+                // =============================================
+                // Vehicle Disconnected
+                // =============================================
 
                 case "vehicle_disconnected":
 
@@ -1712,9 +2066,24 @@ function connectWebSocket()
                     break;
 
 
+
+                // =============================================
+                // Telemetry
+                // =============================================
+
                 case "telemetry":
 
                     await handleTelemetry(
+                        message
+                    );
+
+                    break;
+
+
+                default:
+
+                    console.log(
+                        "Unknown WebSocket message:",
                         message
                     );
 
@@ -1724,6 +2093,11 @@ function connectWebSocket()
 
         };
 
+
+
+    // ========================================================
+    // Close
+    // ========================================================
 
     socket.onclose =
         function ()
@@ -1749,6 +2123,11 @@ function connectWebSocket()
         };
 
 
+
+    // ========================================================
+    // Error
+    // ========================================================
+
     socket.onerror =
         function (
             error
@@ -1767,13 +2146,17 @@ function connectWebSocket()
 
 
 // ============================================================
-// Dashboard
+// Update Dashboard
 // ============================================================
 
 function updateDashboard(
     data
 )
 {
+
+    // ========================================================
+    // Raw JSON
+    // ========================================================
 
     document.getElementById(
         "rawTelemetry"
@@ -1785,15 +2168,27 @@ function updateDashboard(
         );
 
 
+
+    // ========================================================
+    // Frame
+    // ========================================================
+
     document.getElementById(
         "frameNumber"
     ).textContent =
         data.frameNumber
-        ?? "--";
+        ??
+        "--";
 
+
+
+    // ========================================================
+    // Speed
+    // ========================================================
 
     if (
-        data.speed !== undefined
+        data.speed !== undefined &&
+        data.speed !== null
     )
     {
 
@@ -1802,10 +2197,26 @@ function updateDashboard(
         ).textContent =
             Number(
                 data.speed
-            ).toFixed(1);
+            ).toFixed(
+                1
+            );
+
+    }
+    else
+    {
+
+        document.getElementById(
+            "speed"
+        ).textContent =
+            "--";
 
     }
 
+
+
+    // ========================================================
+    // GPS
+    // ========================================================
 
     if (
         data.location &&
@@ -1829,14 +2240,23 @@ function updateDashboard(
         document.getElementById(
             "latitude"
         ).textContent =
-            latitude.toFixed(6);
+            latitude.toFixed(
+                6
+            );
 
 
         document.getElementById(
             "longitude"
         ).textContent =
-            longitude.toFixed(6);
+            longitude.toFixed(
+                6
+            );
 
+
+
+        // ====================================================
+        // Map Marker
+        // ====================================================
 
         if (!vehicleMarker)
         {
@@ -1865,6 +2285,11 @@ function updateDashboard(
         }
 
 
+
+        // ====================================================
+        // Re-center after selecting another vehicle
+        // ====================================================
+
         if (firstPosition)
         {
 
@@ -1883,12 +2308,37 @@ function updateDashboard(
         }
 
     }
+    else
+    {
 
+        document.getElementById(
+            "latitude"
+        ).textContent =
+            "--";
+
+
+        document.getElementById(
+            "longitude"
+        ).textContent =
+            "--";
+
+    }
+
+
+
+    // ========================================================
+    // Objects
+    // ========================================================
 
     updateDetectedObjects(
         data.detectedObjects
     );
 
+
+
+    // ========================================================
+    // Last Update
+    // ========================================================
 
     document.getElementById(
         "lastUpdate"
@@ -1901,7 +2351,7 @@ function updateDashboard(
 
 
 // ============================================================
-// Objects
+// Update Detected Objects
 // ============================================================
 
 function updateDetectedObjects(
@@ -1919,8 +2369,16 @@ function updateDetectedObjects(
         "";
 
 
+
+    // ========================================================
+    // No Objects
+    // ========================================================
+
     if (
-        !Array.isArray(objects) ||
+        !Array.isArray(
+            objects
+        )
+        ||
         objects.length === 0
     )
     {
@@ -1957,8 +2415,14 @@ function updateDetectedObjects(
 
 
         return;
+
     }
 
+
+
+    // ========================================================
+    // Object Count
+    // ========================================================
 
     document.getElementById(
         "objectCount"
@@ -1971,6 +2435,11 @@ function updateDetectedObjects(
     ).textContent =
         objects.length;
 
+
+
+    // ========================================================
+    // Create Object Cards
+    // ========================================================
 
     objects.forEach(
         object =>
@@ -1985,6 +2454,11 @@ function updateDetectedObjects(
             item.className =
                 "object-item";
 
+
+
+            // =================================================
+            // Header
+            // =================================================
 
             const header =
                 document.createElement(
@@ -2008,7 +2482,8 @@ function updateDetectedObjects(
 
             type.textContent =
                 object.type
-                ?? "unknown";
+                ??
+                "unknown";
 
 
             const id =
@@ -2039,6 +2514,11 @@ function updateDetectedObjects(
                 header
             );
 
+
+
+            // =================================================
+            // Bounding Box
+            // =================================================
 
             const coordinates =
                 document.createElement(
@@ -2099,7 +2579,7 @@ function updateDetectedObjects(
 
 
 // ============================================================
-// Coordinate
+// Create Coordinate Element
 // ============================================================
 
 function createCoordinate(
@@ -2114,28 +2594,30 @@ function createCoordinate(
         );
 
 
-    const span =
+    const labelElement =
         document.createElement(
             "span"
         );
 
 
-    span.className =
+    labelElement.className =
         "coordinate-label";
 
 
-    span.textContent =
+    labelElement.textContent =
         `${label}: `;
 
 
     div.appendChild(
-        span
+        labelElement
     );
 
 
     div.appendChild(
         document.createTextNode(
-            value ?? "--"
+            value
+            ??
+            "--"
         )
     );
 
@@ -2147,7 +2629,7 @@ function createCoordinate(
 
 
 // ============================================================
-// Recording
+// Start Recording
 // ============================================================
 
 async function startRecording()
@@ -2160,6 +2642,7 @@ async function startRecording()
     {
 
         return;
+
     }
 
 
@@ -2172,45 +2655,66 @@ async function startRecording()
         );
 
 
-    currentRecordingId =
-        await createRecording(
-            selectedVehicleId,
-            vehicle?.vehicleName
-            ?? selectedVehicleId
+    try
+    {
+
+        currentRecordingId =
+            await createRecording(
+                selectedVehicleId,
+                vehicle?.vehicleName
+                ??
+                selectedVehicleId
+            );
+
+
+        recordingVehicleId =
+            selectedVehicleId;
+
+
+        currentRecordingFrameCount =
+            0;
+
+
+        isRecording =
+            true;
+
+
+        startRecordingButton.disabled =
+            true;
+
+
+        stopRecordingButton.disabled =
+            false;
+
+
+        document.getElementById(
+            "recordingStatus"
+        ).textContent =
+
+            `Recording ${recordingVehicleId} - 0 frames`;
+
+    }
+    catch (error)
+    {
+
+        console.error(
+            "Unable to start recording:",
+            error
         );
 
 
-    recordingVehicleId =
-        selectedVehicleId;
+        alert(
+            "Unable to start recording."
+        );
 
-
-    currentRecordingFrameCount =
-        0;
-
-
-    isRecording =
-        true;
-
-
-    startRecordingButton.disabled =
-        true;
-
-
-    stopRecordingButton.disabled =
-        false;
-
-
-    document.getElementById(
-        "recordingStatus"
-    ).textContent =
-        `Recording ${recordingVehicleId} - 0 frames`;
+    }
 
 }
 
 
 
 // ============================================================
-// Stop recording
+// Stop Recording
 // ============================================================
 
 async function stopRecording()
@@ -2220,12 +2724,13 @@ async function stopRecording()
     {
 
         return;
+
     }
 
 
     /*
-     * Set false first so no new telemetry is accepted into
-     * this recording while it is being closed.
+     * Stop accepting new telemetry into the recording before
+     * updating its metadata.
      */
 
     isRecording =
@@ -2240,18 +2745,32 @@ async function stopRecording()
         recordingVehicleId;
 
 
-    await finishRecording(
-        finishedRecordingId,
-        currentRecordingFrameCount
-    );
+    try
+    {
+
+        await finishRecording(
+            finishedRecordingId,
+            currentRecordingFrameCount
+        );
 
 
-    document.getElementById(
-        "recordingStatus"
-    ).textContent =
+        document.getElementById(
+            "recordingStatus"
+        ).textContent =
 
-        `${finishedVehicleId}: ` +
-        `${currentRecordingFrameCount} frames recorded`;
+            `${finishedVehicleId}: ` +
+            `${currentRecordingFrameCount} frames recorded`;
+
+    }
+    catch (error)
+    {
+
+        console.error(
+            "Unable to finish recording:",
+            error
+        );
+
+    }
 
 
     currentRecordingId =
@@ -2277,7 +2796,7 @@ async function stopRecording()
 
 
 // ============================================================
-// Refresh recordings
+// Refresh Recording List
 // ============================================================
 
 async function refreshRecordingList()
@@ -2286,6 +2805,10 @@ async function refreshRecordingList()
     recordingSelect.innerHTML =
         "";
 
+
+    // ========================================================
+    // No Vehicle
+    // ========================================================
 
     if (!selectedVehicleId)
     {
@@ -2309,9 +2832,27 @@ async function refreshRecordingList()
         );
 
 
+        loadReplayButton.disabled =
+            true;
+
+
+        saveRecordingButton.disabled =
+            true;
+
+
+        deleteRecordingButton.disabled =
+            true;
+
+
         return;
+
     }
 
+
+
+    // ========================================================
+    // Get Recordings
+    // ========================================================
 
     const recordings =
         await getRecordingsForVehicle(
@@ -2324,6 +2865,11 @@ async function refreshRecordingList()
             b.id - a.id
     );
 
+
+
+    // ========================================================
+    // None
+    // ========================================================
 
     if (
         recordings.length === 0
@@ -2362,8 +2908,14 @@ async function refreshRecordingList()
 
 
         return;
+
     }
 
+
+
+    // ========================================================
+    // Add Recordings
+    // ========================================================
 
     recordings.forEach(
         recording =>
@@ -2382,7 +2934,11 @@ async function refreshRecordingList()
             option.textContent =
 
                 `#${recording.id} - ` +
-                `${new Date(recording.startedAt).toLocaleString()} - ` +
+
+                `${new Date(
+                    recording.startedAt
+                ).toLocaleString()} - ` +
+
                 `${recording.frameCount} frames`;
 
 
@@ -2410,104 +2966,130 @@ async function refreshRecordingList()
 
 
 // ============================================================
-// Replay
+// Load Recording
 // ============================================================
 
 async function loadSelectedRecording()
 {
 
-    const id =
+    const recordingId =
         Number(
             recordingSelect.value
         );
 
 
-    if (!id)
+    if (!recordingId)
     {
 
         return;
+
     }
 
 
-    const recording =
-        await getRecording(
-            id
-        );
-
-
-    if (!recording)
+    try
     {
 
-        return;
-    }
+        const recording =
+            await getRecording(
+                recordingId
+            );
 
 
-    replayRecordingId =
-        id;
+        if (!recording)
+        {
+
+            return;
+
+        }
 
 
-    replayVehicleId =
-        recording.vehicleId;
+        pauseReplay();
 
 
-    replayFrameCount =
-        recording.frameCount;
+        replayRecordingId =
+            recordingId;
 
 
-    replayIndex =
-        0;
+        replayVehicleId =
+            recording.vehicleId;
 
 
-    replaySlider.min =
-        0;
+        replayFrameCount =
+            recording.frameCount;
 
 
-    replaySlider.max =
-        Math.max(
-            0,
-            replayFrameCount - 1
+        replayIndex =
+            0;
+
+
+        replaySlider.min =
+            0;
+
+
+        replaySlider.max =
+            Math.max(
+                0,
+                replayFrameCount - 1
+            );
+
+
+        replaySlider.value =
+            0;
+
+
+        replaySlider.disabled =
+            false;
+
+
+        playReplayButton.disabled =
+            replayFrameCount === 0;
+
+
+        stopReplayButton.disabled =
+            false;
+
+
+        previousFrameButton.disabled =
+            replayFrameCount === 0;
+
+
+        nextFrameButton.disabled =
+            replayFrameCount === 0;
+
+
+        setMode(
+            true
         );
 
 
-    replaySlider.value =
-        0;
+        if (
+            replayFrameCount > 0
+        )
+        {
 
+            await displayReplayFrame(
+                0
+            );
 
-    replaySlider.disabled =
-        false;
+        }
 
+    }
+    catch (error)
+    {
 
-    playReplayButton.disabled =
-        false;
+        console.error(
+            "Unable to load recording:",
+            error
+        );
 
-
-    stopReplayButton.disabled =
-        false;
-
-
-    previousFrameButton.disabled =
-        false;
-
-
-    nextFrameButton.disabled =
-        false;
-
-
-    setMode(
-        true
-    );
-
-
-    await displayReplayFrame(
-        0
-    );
+    }
 
 }
 
 
 
 // ============================================================
-// Display replay frame
+// Display Replay Frame
 // ============================================================
 
 async function displayReplayFrame(
@@ -2516,11 +3098,13 @@ async function displayReplayFrame(
 {
 
     if (
-        replayRecordingId === null
+        replayRecordingId === null ||
+        replayFrameCount === 0
     )
     {
 
         return;
+
     }
 
 
@@ -2544,7 +3128,14 @@ async function displayReplayFrame(
     if (!frame)
     {
 
+        console.warn(
+            "Replay frame not found:",
+            index
+        );
+
+
         return;
+
     }
 
 
@@ -2566,28 +3157,38 @@ async function displayReplayFrame(
     ).textContent =
 
         `${replayVehicleId}: ` +
+
         `${index + 1} / ${replayFrameCount} ` +
-        `(frame ${frame.data.frameNumber ?? "--"})`;
+
+        `(telemetry frame ` +
+
+        `${frame.data.frameNumber ?? "--"})`;
 
 }
 
 
 
 // ============================================================
-// Play / Pause
+// Play Replay
 // ============================================================
 
 function playReplay()
 {
 
     if (
-        replayRecordingId === null
+        replayRecordingId === null ||
+        replayFrameCount === 0
     )
     {
 
         return;
+
     }
 
+
+    // ========================================================
+    // Toggle Pause
+    // ========================================================
 
     if (replayPlaying)
     {
@@ -2595,8 +3196,14 @@ function playReplay()
         pauseReplay();
 
         return;
+
     }
 
+
+
+    // ========================================================
+    // Restart At Beginning If At End
+    // ========================================================
 
     if (
         replayIndex >=
@@ -2607,7 +3214,13 @@ function playReplay()
         replayIndex =
             0;
 
+
+        displayReplayFrame(
+            0
+        );
+
     }
+
 
 
     replayPlaying =
@@ -2622,6 +3235,11 @@ function playReplay()
 
 }
 
+
+
+// ============================================================
+// Pause Replay
+// ============================================================
 
 function pauseReplay()
 {
@@ -2647,7 +3265,7 @@ function pauseReplay()
 
 
 // ============================================================
-// Replay timing
+// Schedule Replay Frame
 // ============================================================
 
 async function scheduleNextReplayFrame()
@@ -2657,6 +3275,7 @@ async function scheduleNextReplayFrame()
     {
 
         return;
+
     }
 
 
@@ -2669,6 +3288,7 @@ async function scheduleNextReplayFrame()
         pauseReplay();
 
         return;
+
     }
 
 
@@ -2695,8 +3315,14 @@ async function scheduleNextReplayFrame()
         pauseReplay();
 
         return;
+
     }
 
+
+
+    // ========================================================
+    // Original Recording Timing
+    // ========================================================
 
     let delay =
         next.receivedAt -
@@ -2704,7 +3330,10 @@ async function scheduleNextReplayFrame()
 
 
     if (
-        !Number.isFinite(delay) ||
+        !Number.isFinite(
+            delay
+        )
+        ||
         delay < 1
     )
     {
@@ -2715,16 +3344,38 @@ async function scheduleNextReplayFrame()
     }
 
 
-    delay /=
+
+    // ========================================================
+    // Replay Speed
+    // ========================================================
+
+    const speed =
         Number(
             replaySpeed.value
         );
 
 
+    delay =
+        delay / speed;
+
+
+
+    // ========================================================
+    // Schedule
+    // ========================================================
+
     replayTimer =
         setTimeout(
-            async () =>
+            async function ()
             {
+
+                if (!replayPlaying)
+                {
+
+                    return;
+
+                }
+
 
                 await displayReplayFrame(
                     replayIndex + 1
@@ -2742,7 +3393,7 @@ async function scheduleNextReplayFrame()
 
 
 // ============================================================
-// Replay navigation
+// Previous Replay Frame
 // ============================================================
 
 async function previousReplayFrame()
@@ -2765,6 +3416,11 @@ async function previousReplayFrame()
 }
 
 
+
+// ============================================================
+// Next Replay Frame
+// ============================================================
+
 async function nextReplayFrame()
 {
 
@@ -2786,6 +3442,11 @@ async function nextReplayFrame()
 }
 
 
+
+// ============================================================
+// Seek Replay
+// ============================================================
+
 async function seekReplay()
 {
 
@@ -2803,7 +3464,7 @@ async function seekReplay()
 
 
 // ============================================================
-// Exit replay
+// Exit Replay Mode
 // ============================================================
 
 function exitReplayMode()
@@ -2825,6 +3486,10 @@ function exitReplayMode()
 
 
     replayIndex =
+        0;
+
+
+    replaySlider.value =
         0;
 
 
@@ -2859,9 +3524,10 @@ function exitReplayMode()
     );
 
 
-    /*
-     * Immediately restore latest live telemetry.
-     */
+
+    // ========================================================
+    // Restore latest live frame
+    // ========================================================
 
     if (selectedVehicleId)
     {
@@ -2891,7 +3557,7 @@ function exitReplayMode()
 
 
 // ============================================================
-// Mode
+// Set Mode
 // ============================================================
 
 function setMode(
@@ -2933,7 +3599,7 @@ function setMode(
 
 
 // ============================================================
-// Status
+// Set Connection Status
 // ============================================================
 
 function setConnectionStatus(
@@ -2960,7 +3626,7 @@ function setConnectionStatus(
 
 
 // ============================================================
-// Export recording
+// Export Selected Recording
 // ============================================================
 
 async function exportSelectedRecording()
@@ -2976,136 +3642,183 @@ async function exportSelectedRecording()
     {
 
         return;
+
     }
 
 
-    const recording =
-        await getRecording(
-            recordingId
-        );
-
-
-    const frames =
-        [];
-
-
-    for (
-        let i = 0;
-        i < recording.frameCount;
-        i++
-    )
+    try
     {
 
-        const frame =
-            await getFrame(
-                recordingId,
-                i
+        const recording =
+            await getRecording(
+                recordingId
             );
 
 
-        if (frame)
+        if (!recording)
         {
 
-            frames.push({
-
-                receivedAt:
-                    frame.receivedAt,
-
-                data:
-                    frame.data
-
-            });
+            return;
 
         }
 
-    }
+
+        const frames =
+            [];
 
 
-    const output = {
+        for (
+            let i = 0;
+            i < recording.frameCount;
+            i++
+        )
+        {
 
-        formatVersion:
-            2,
-
-        vehicleId:
-            recording.vehicleId,
-
-        vehicleName:
-            recording.vehicleName,
-
-        recordingStarted:
-            recording.startedAt,
-
-        recordingStopped:
-            recording.stoppedAt,
-
-        frameCount:
-            frames.length,
-
-        frames:
-            frames
-
-    };
+            const frame =
+                await getFrame(
+                    recordingId,
+                    i
+                );
 
 
-    const blob =
-        new Blob(
-            [
-                JSON.stringify(
-                    output,
-                    null,
-                    2
-                )
-            ],
+            if (frame)
             {
-                type:
-                    "application/json"
+
+                frames.push(
+                    {
+
+                        receivedAt:
+                            frame.receivedAt,
+
+                        data:
+                            frame.data
+
+                    }
+                );
+
             }
+
+        }
+
+
+
+        const output =
+            {
+
+                formatVersion:
+                    2,
+
+                vehicleId:
+                    recording.vehicleId,
+
+                vehicleName:
+                    recording.vehicleName,
+
+                recordingStarted:
+                    recording.startedAt,
+
+                recordingStopped:
+                    recording.stoppedAt,
+
+                frameCount:
+                    frames.length,
+
+                frames:
+                    frames
+
+            };
+
+
+
+        const json =
+            JSON.stringify(
+                output,
+                null,
+                2
+            );
+
+
+        const blob =
+            new Blob(
+                [
+                    json
+                ],
+                {
+
+                    type:
+                        "application/json"
+
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+
+        const timestamp =
+            recording.startedAt
+                .replaceAll(
+                    ":",
+                    "-"
+                );
+
+
+        link.href =
+            url;
+
+
+        link.download =
+
+            `${recording.vehicleId}_` +
+            `${timestamp}.json`;
+
+
+        document.body.appendChild(
+            link
         );
 
 
-    const url =
-        URL.createObjectURL(
-            blob
+        link.click();
+
+
+        link.remove();
+
+
+        URL.revokeObjectURL(
+            url
+        );
+
+    }
+    catch (error)
+    {
+
+        console.error(
+            "Unable to export recording:",
+            error
         );
 
 
-    const link =
-        document.createElement(
-            "a"
+        alert(
+            "Unable to export recording."
         );
 
-
-    link.href =
-        url;
-
-
-    link.download =
-
-        `${recording.vehicleId}_` +
-        `${recording.startedAt.replaceAll(":", "-")}.json`;
-
-
-    document.body.appendChild(
-        link
-    );
-
-
-    link.click();
-
-
-    link.remove();
-
-
-    URL.revokeObjectURL(
-        url
-    );
+    }
 
 }
 
 
 
 // ============================================================
-// Delete recording
+// Delete Selected Recording
 // ============================================================
 
 async function deleteSelectedRecording()
@@ -3121,19 +3834,28 @@ async function deleteSelectedRecording()
     {
 
         return;
+
     }
 
 
-    if (
-        !confirm(
+    const confirmed =
+        confirm(
             `Delete recording #${recordingId}?`
-        )
-    )
+        );
+
+
+    if (!confirmed)
     {
 
         return;
+
     }
 
+
+
+    // ========================================================
+    // Exit Replay If This Recording Is Active
+    // ========================================================
 
     if (
         replayRecordingId ===
@@ -3146,6 +3868,11 @@ async function deleteSelectedRecording()
     }
 
 
+
+    // ========================================================
+    // Transaction
+    // ========================================================
+
     const transaction =
         database.transaction(
             [
@@ -3156,6 +3883,11 @@ async function deleteSelectedRecording()
         );
 
 
+
+    // ========================================================
+    // Delete Recording Metadata
+    // ========================================================
+
     transaction
         .objectStore(
             RECORDINGS_STORE
@@ -3164,6 +3896,11 @@ async function deleteSelectedRecording()
             recordingId
         );
 
+
+
+    // ========================================================
+    // Delete Recording Frames
+    // ========================================================
 
     const frameStore =
         transaction.objectStore(
@@ -3198,12 +3935,18 @@ async function deleteSelectedRecording()
 
                 cursor.delete();
 
+
                 cursor.continue();
 
             }
 
         };
 
+
+
+    // ========================================================
+    // Refresh
+    // ========================================================
 
     transaction.oncomplete =
         async function ()
@@ -3213,12 +3956,50 @@ async function deleteSelectedRecording()
 
         };
 
+
+    transaction.onerror =
+        function ()
+        {
+
+            console.error(
+                "Unable to delete recording:",
+                transaction.error
+            );
+
+        };
+
 }
 
 
 
 // ============================================================
-// Events
+// Recording Selection Changed
+// ============================================================
+
+function recordingSelectionChanged()
+{
+
+    const selected =
+        recordingSelect.value !== "";
+
+
+    loadReplayButton.disabled =
+        !selected;
+
+
+    saveRecordingButton.disabled =
+        !selected;
+
+
+    deleteRecordingButton.disabled =
+        !selected;
+
+}
+
+
+
+// ============================================================
+// Event Listeners
 // ============================================================
 
 startRecordingButton.addEventListener(
@@ -3230,6 +4011,24 @@ startRecordingButton.addEventListener(
 stopRecordingButton.addEventListener(
     "click",
     stopRecording
+);
+
+
+saveRecordingButton.addEventListener(
+    "click",
+    exportSelectedRecording
+);
+
+
+deleteRecordingButton.addEventListener(
+    "click",
+    deleteSelectedRecording
+);
+
+
+recordingSelect.addEventListener(
+    "change",
+    recordingSelectionChanged
 );
 
 
@@ -3269,32 +4068,25 @@ replaySlider.addEventListener(
 );
 
 
-saveRecordingButton.addEventListener(
-    "click",
-    exportSelectedRecording
-);
-
-
-deleteRecordingButton.addEventListener(
-    "click",
-    deleteSelectedRecording
-);
-
-
 
 // ============================================================
-// Periodically update "Xs ago"
+// Update Vehicle "Last Seen" Display
 // ============================================================
 
 setInterval(
-    updateVehicleList,
+    function ()
+    {
+
+        updateVehicleList();
+
+    },
     1000
 );
 
 
 
 // ============================================================
-// Start application
+// Initialize Application
 // ============================================================
 
 async function initializeApplication()
@@ -3303,8 +4095,17 @@ async function initializeApplication()
     try
     {
 
+        // ====================================================
+        // IndexedDB
+        // ====================================================
+
         await openDatabase();
 
+
+
+        // ====================================================
+        // WebSocket
+        // ====================================================
 
         connectWebSocket();
 
@@ -3313,18 +4114,23 @@ async function initializeApplication()
     {
 
         console.error(
-            "Initialization failed:",
+            "Application initialization failed:",
             error
         );
 
 
         alert(
-            "Unable to initialize IndexedDB"
+            "Unable to initialize telemetry database."
         );
 
     }
 
 }
 
+
+
+// ============================================================
+// Start
+// ============================================================
 
 initializeApplication();
