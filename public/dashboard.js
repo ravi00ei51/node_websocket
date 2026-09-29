@@ -1,597 +1,3162 @@
-"use strict";
+// ============================================================
+// WebSocket
+// ============================================================
 
-const WS_URL = "wss://web-socket-9wz7.onrender.com";
-const FLUSH_INTERVAL_MS = 5000;
-const MAX_REPLAY_DELAY_MS = 5000;
+const wsProtocol =
+    window.location.protocol === "https:"
+        ? "wss:"
+        : "ws:";
 
-const vehicles = new Map();
-let selectedVehicleId = null;
+
+const WEBSOCKET_URL =
+    `${wsProtocol}//${window.location.host}`;
+
+
 let socket = null;
 let reconnectTimer = null;
-let map = null;
-let mapMarker = null;
+let totalMessageCount = 0;
 
-// Recording state.
-let isRecording = false;
-let recordingVehicleId = null;
-let recordingVehicleName = null;
-let recordingFileHandle = null;
-let recordingFileName = null;
-let recordingBuffer = [];
-let recordingFlushTimer = null;
-let recordingWriteChain = Promise.resolve();
-let recordingFrameCount = 0;
-let recordingWrittenCount = 0;
-let recordingStartedAt = null;
-let recordingFailed = false;
 
-// Replay state. Frames are NOT loaded into RAM. We build a compact byte-offset index.
-let replayFile = null;
-let replayFileName = null;
-let replayEntries = []; // { start, end, receivedAt }
-let replayIndex = -1;
-let replayPlaying = false;
-let replayTimer = null;
-let replayGeneration = 0;
 
-const $ = (id) => document.getElementById(id);
-const modeBadge = $("modeBadge");
-const connectionStatus = $("connectionStatus");
-const vehicleCount = $("vehicleCount");
-const vehicleList = $("vehicleList");
-const startRecordingButton = $("startRecordingButton");
-const stopRecordingButton = $("stopRecordingButton");
-const openRecordingButton = $("openRecordingButton");
-const recordingFileInput = $("recordingFileInput");
-const recordingStatus = $("recordingStatus");
-const recordingFileNameElement = $("recordingFileName");
-const bufferedCount = $("bufferedCount");
-const writtenCount = $("writtenCount");
-const previousFrameButton = $("previousFrameButton");
-const playPauseButton = $("playPauseButton");
-const nextFrameButton = $("nextFrameButton");
-const exitReplayButton = $("exitReplayButton");
-const replaySpeed = $("replaySpeed");
-const replaySlider = $("replaySlider");
-const replayPosition = $("replayPosition");
-const replayStatus = $("replayStatus");
+// ============================================================
+// Vehicles
+// ============================================================
 
-function initializeMap() {
-  map = L.map("map").setView([54.6, -6.2], 9);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
-}
+const vehicles =
+    new Map();
 
-function setConnectionState(connected) {
-  connectionStatus.textContent = connected ? "Connected" : "Disconnected";
-  connectionStatus.className = `status ${connected ? "connected" : "disconnected"}`;
-}
 
-function connectWebSocket() {
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
-  socket = new WebSocket(WS_URL);
+let selectedVehicleId =
+    null;
 
-  socket.addEventListener("open", () => {
-    setConnectionState(true);
-    socket.send(JSON.stringify({ type: "handshake", role: "browser" }));
-  });
 
-  socket.addEventListener("message", (event) => {
-    try { handleServerMessage(JSON.parse(event.data)); }
-    catch (error) { console.error("Invalid WebSocket message", error); }
-  });
 
-  socket.addEventListener("close", () => {
-    setConnectionState(false);
-    socket = null;
-    clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(connectWebSocket, 2000);
-  });
+// ============================================================
+// Portable JSONL Recording
+// ============================================================
 
-  socket.addEventListener("error", () => setConnectionState(false));
-}
+const RECORDING_FLUSH_INTERVAL_MS =
+    5000;
 
-function handleServerMessage(message) {
-  switch (message.type) {
-    case "vehicle_list":
-      if (Array.isArray(message.vehicles)) {
-        for (const item of message.vehicles) upsertVehicle(item.vehicleId, item.vehicleName, true);
-        renderVehicleList();
-      }
-      break;
-    case "vehicle_connected":
-      upsertVehicle(message.vehicleId, message.vehicleName, true);
-      renderVehicleList();
-      break;
-    case "vehicle_disconnected": {
-      const vehicle = vehicles.get(message.vehicleId);
-      if (vehicle) vehicle.connected = false;
-      renderVehicleList();
-      break;
+let isRecording =
+    false;
+
+let recordingVehicleId =
+    null;
+
+let recordingVehicleName =
+    null;
+
+let recordingFrameIndex =
+    0;
+
+let recordingBuffer =
+    [];
+
+let recordingFlushTimer =
+    null;
+
+let recordingWriteChain =
+    Promise.resolve();
+
+let recordingFileHandle =
+    null;
+
+let recordingFileName =
+    null;
+
+let recordingStartedAt =
+    null;
+
+
+// ============================================================
+// JSONL Replay
+// ============================================================
+
+let replayRecordingId =
+    null;
+
+let replayVehicleId =
+    null;
+
+let replayFrameCount =
+    0;
+
+let replayIndex =
+    0;
+
+let replayPlaying =
+    false;
+
+let replayTimer =
+    null;
+
+let replayFile =
+    null;
+
+let replayFileHandle =
+    null;
+
+let replayFrameIndex =
+    [];
+
+let replayHeader =
+    null;
+
+let lastRecordingAvailable =
+    false;
+
+
+// ============================================================
+// Map
+// ============================================================
+
+const map =
+    L.map(
+        "map"
+    ).setView(
+        [
+            54.7,
+            -6.2
+        ],
+        10
+    );
+
+L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        maxZoom:
+            19,
+
+        attribution:
+            "&copy; OpenStreetMap contributors"
     }
-    case "telemetry":
-      handleTelemetry(message);
-      break;
-  }
+).addTo(
+    map
+);
+
+let vehicleMarker =
+    null;
+
+let firstPosition =
+    true;
+
+
+// ============================================================
+// UI
+// ============================================================
+
+const startRecordingButton =
+    document.getElementById(
+        "startRecordingButton"
+    );
+
+const stopRecordingButton =
+    document.getElementById(
+        "stopRecordingButton"
+    );
+
+const saveRecordingButton =
+    document.getElementById(
+        "saveRecordingButton"
+    );
+
+const deleteRecordingButton =
+    document.getElementById(
+        "deleteRecordingButton"
+    );
+
+const recordingSelect =
+    document.getElementById(
+        "recordingSelect"
+    );
+
+const recordingFileInput =
+    document.getElementById(
+        "recordingFileInput"
+    );
+
+const replayLastButton =
+    document.getElementById(
+        "replayLastButton"
+    );
+
+const loadReplayButton =
+    document.getElementById(
+        "loadReplayButton"
+    );
+
+const playReplayButton =
+    document.getElementById(
+        "playReplayButton"
+    );
+
+const stopReplayButton =
+    document.getElementById(
+        "stopReplayButton"
+    );
+
+const previousFrameButton =
+    document.getElementById(
+        "previousFrameButton"
+    );
+
+const nextFrameButton =
+    document.getElementById(
+        "nextFrameButton"
+    );
+
+const replaySlider =
+    document.getElementById(
+        "replaySlider"
+    );
+
+const replaySpeed =
+    document.getElementById(
+        "replaySpeed"
+    );
+
+
+// ============================================================
+// Helpers
+// ============================================================
+
+function safeFilePart(
+    value
+)
+{
+    return String(
+        value ?? "vehicle"
+    ).replace(
+        /[^a-zA-Z0-9_.-]+/g,
+        "_"
+    );
 }
 
-function upsertVehicle(vehicleId, vehicleName, connected) {
-  if (!vehicleId) return;
-  const existing = vehicles.get(vehicleId) || {};
-  vehicles.set(vehicleId, {
-    vehicleId,
-    vehicleName: vehicleName || existing.vehicleName || vehicleId,
-    connected,
-    telemetry: existing.telemetry || null,
-    lastUpdate: existing.lastUpdate || null
-  });
-  if (!selectedVehicleId) selectedVehicleId = vehicleId;
+
+function makeRecordingFileName()
+{
+    const timestamp =
+        new Date()
+            .toISOString()
+            .replace(
+                /[:.]/g,
+                "-"
+            );
+
+    return (
+        `${safeFilePart(recordingVehicleId)}_` +
+        `${timestamp}.jsonl`
+    );
 }
 
-function handleTelemetry(message) {
-  if (!message.vehicleId || !message.data) return;
-  upsertVehicle(message.vehicleId, message.vehicleName, true);
-  const vehicle = vehicles.get(message.vehicleId);
-  vehicle.telemetry = message.data;
-  vehicle.lastUpdate = message.serverReceivedAt || Date.now();
 
-  // Capture every message for the vehicle that was selected when recording started.
-  if (isRecording && !recordingFailed && message.vehicleId === recordingVehicleId) {
-    recordingBuffer.push({
-      recordType: "telemetry",
-      frameIndex: recordingFrameCount++,
-      receivedAt: message.serverReceivedAt || Date.now(),
-      data: structuredClone(message.data)
-    });
-    bufferedCount.textContent = String(recordingBuffer.length);
-  }
-
-  if (!replayFile && message.vehicleId === selectedVehicleId) displayTelemetry(message.data);
-  renderVehicleList();
-}
-
-function renderVehicleList() {
-  const sorted = [...vehicles.values()];
-  sorted.sort((a, b) => {
-    if (a.vehicleId === selectedVehicleId) return -1;
-    if (b.vehicleId === selectedVehicleId) return 1;
-    if (a.connected !== b.connected) return a.connected ? -1 : 1;
-    return a.vehicleName.localeCompare(b.vehicleName);
-  });
-
-  vehicleCount.textContent = String(sorted.length);
-  vehicleList.innerHTML = "";
-  if (!sorted.length) {
-    vehicleList.innerHTML = '<div class="empty">Waiting for vehicles...</div>';
-    updateControlStates();
-    return;
-  }
-
-  for (const vehicle of sorted) {
-    const button = document.createElement("button");
-    button.className = `vehicle${vehicle.vehicleId === selectedVehicleId ? " selected" : ""}`;
-    button.innerHTML = `${vehicle.vehicleId === selectedVehicleId ? '<span class="selected-label">SELECTED</span>' : ""}` +
-      `<span class="vehicle-name">${escapeHtml(vehicle.vehicleName)}</span>` +
-      `<span class="vehicle-id">${escapeHtml(vehicle.vehicleId)}</span>` +
-      `<span class="vehicle-state">${vehicle.connected ? "Online" : "Offline"}</span>`;
-    button.addEventListener("click", () => selectVehicle(vehicle.vehicleId));
-    vehicleList.appendChild(button);
-  }
-  updateControlStates();
-}
-
-function selectVehicle(vehicleId) {
-  selectedVehicleId = vehicleId;
-  renderVehicleList();
-  if (!replayFile) {
-    const vehicle = vehicles.get(vehicleId);
-    vehicle?.telemetry ? displayTelemetry(vehicle.telemetry) : clearDashboard();
-  }
-}
-
-function displayTelemetry(data) {
-  $("frameNumber").textContent = data?.frameNumber ?? "--";
-  $("speed").textContent = Number.isFinite(Number(data?.speed)) ? `${Number(data.speed).toFixed(1)}` : "--";
-  $("latitude").textContent = Number.isFinite(Number(data?.location?.latitude)) ? Number(data.location.latitude).toFixed(6) : "--";
-  $("longitude").textContent = Number.isFinite(Number(data?.location?.longitude)) ? Number(data.location.longitude).toFixed(6) : "--";
-  const objects = Array.isArray(data?.detectedObjects) ? data.detectedObjects : [];
-  $("objectCount").textContent = String(objects.length);
-  $("rawTelemetry").textContent = JSON.stringify(data, null, 2);
-
-  const objectList = $("objectList");
-  objectList.innerHTML = objects.length ? "" : '<div class="empty">No detected objects</div>';
-  for (const object of objects) {
-    const div = document.createElement("div");
-    div.className = "object-item";
-    div.innerHTML = `<span class="object-type">${escapeHtml(object.type ?? "object")} #${escapeHtml(String(object.id ?? "--"))}</span>` +
-      `<span class="object-details">x=${object.x ?? "--"}, y=${object.y ?? "--"}, w=${object.width ?? "--"}, h=${object.height ?? "--"}</span>`;
-    objectList.appendChild(div);
-  }
-
-  const lat = Number(data?.location?.latitude);
-  const lon = Number(data?.location?.longitude);
-  if (Number.isFinite(lat) && Number.isFinite(lon)) {
-    if (!mapMarker) mapMarker = L.marker([lat, lon]).addTo(map);
-    else mapMarker.setLatLng([lat, lon]);
-    map.setView([lat, lon], Math.max(map.getZoom(), 14));
-  }
-}
-
-function clearDashboard() {
-  for (const id of ["frameNumber", "speed", "latitude", "longitude", "objectCount"]) $(id).textContent = "--";
-  $("objectList").innerHTML = '<div class="empty">No telemetry</div>';
-  $("rawTelemetry").textContent = "Waiting for telemetry...";
-  if (mapMarker) { map.removeLayer(mapMarker); mapMarker = null; }
-}
-
-function makeRecordingFilename(vehicleId) {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  return `${vehicleId}_${stamp}.jsonl`;
-}
-
-async function startRecording() {
-  if (isRecording || !selectedVehicleId) return;
-  if (!("showSaveFilePicker" in window)) {
-    alert("This browser does not support direct file recording with showSaveFilePicker(). Use a current browser that supports the File System Access API over HTTPS.");
-    return;
-  }
-
-  const vehicle = vehicles.get(selectedVehicleId);
-  try {
-    recordingFileHandle = await window.showSaveFilePicker({
-      suggestedName: makeRecordingFilename(selectedVehicleId),
-      types: [{ description: "JSON Lines telemetry recording", accept: { "application/x-ndjson": [".jsonl", ".ndjson"] } }]
-    });
-  } catch (error) {
-    if (error.name !== "AbortError") console.error(error);
-    return;
-  }
-
-  recordingVehicleId = selectedVehicleId;
-  recordingVehicleName = vehicle?.vehicleName || selectedVehicleId;
-  recordingFileName = recordingFileHandle.name;
-  recordingBuffer = [];
-  recordingFrameCount = 0;
-  recordingWrittenCount = 0;
-  recordingStartedAt = new Date().toISOString();
-  recordingFailed = false;
-  recordingWriteChain = Promise.resolve();
-
-  try {
-    // Create/truncate and commit the header immediately.
-    const writable = await recordingFileHandle.createWritable({ mode: "exclusive" });
-    const header = {
-      recordType: "header",
-      formatVersion: 1,
-      vehicleId: recordingVehicleId,
-      vehicleName: recordingVehicleName,
-      startedAt: recordingStartedAt
-    };
-    await writable.write(JSON.stringify(header) + "\n");
-    await writable.close();
-  } catch (error) {
-    console.error("Unable to initialize recording file", error);
-    alert(`Unable to initialize recording file:\n${error.message}`);
-    resetRecordingState();
-    return;
-  }
-
-  isRecording = true;
-  recordingStatus.textContent = "Recording";
-  recordingFileNameElement.textContent = recordingFileName;
-  bufferedCount.textContent = "0";
-  writtenCount.textContent = "0";
-  recordingFlushTimer = setInterval(() => { void flushRecordingBuffer(); }, FLUSH_INTERVAL_MS);
-  updateControlStates();
-}
-
-function queueAppendText(text, count) {
-  recordingWriteChain = recordingWriteChain
-    .catch((error) => {
-      console.error("Previous recording write failed", error);
-      // Recover the chain so a transient failure doesn't permanently poison it.
-    })
-    .then(async () => {
-      if (!recordingFileHandle) throw new Error("Recording file handle is unavailable");
-      const existingFile = await recordingFileHandle.getFile();
-      const writable = await recordingFileHandle.createWritable({ keepExistingData: true, mode: "exclusive" });
-      await writable.seek(existingFile.size);
-      await writable.write(text);
-      await writable.close(); // commit this batch to the user-visible file
-      recordingWrittenCount += count;
-      writtenCount.textContent = String(recordingWrittenCount);
-    })
-    .catch((error) => {
-      recordingFailed = true;
-      recordingStatus.textContent = "Write error";
-      console.error("Recording write failed", error);
-      throw error;
-    });
-  return recordingWriteChain;
-}
-
-async function flushRecordingBuffer() {
-  if (!recordingBuffer.length || !recordingFileHandle || recordingFailed) return;
-
-  // Double-buffer: immediately swap so new WebSocket messages keep accumulating.
-  const batch = recordingBuffer;
-  recordingBuffer = [];
-  bufferedCount.textContent = "0";
-  const text = batch.map((entry) => JSON.stringify(entry)).join("\n") + "\n";
-
-  try {
-    await queueAppendText(text, batch.length);
-  } catch (error) {
-    // Preserve unwritten data in RAM if possible. Newer frames may already be in recordingBuffer.
-    recordingBuffer = batch.concat(recordingBuffer);
-    bufferedCount.textContent = String(recordingBuffer.length);
-    console.error("Batch restored to RAM after write failure", error);
-  }
-}
-
-async function stopRecording() {
-  if (!isRecording) return;
-  isRecording = false; // stop accepting new frames first
-  clearInterval(recordingFlushTimer);
-  recordingFlushTimer = null;
-  recordingStatus.textContent = "Finishing...";
-  updateControlStates();
-
-  await flushRecordingBuffer();
-  try { await recordingWriteChain.catch(() => {}); } catch (_) {}
-
-  if (!recordingFailed && recordingFileHandle) {
-    const footer = {
-      recordType: "footer",
-      stoppedAt: new Date().toISOString(),
-      frameCount: recordingFrameCount,
-      status: "completed"
-    };
-    try {
-      await queueAppendText(JSON.stringify(footer) + "\n", 0);
-      recordingStatus.textContent = `Saved ${recordingFrameCount} messages`;
-    } catch (error) {
-      recordingStatus.textContent = "Stopped with write error";
+async function appendTextToRecordingFile(
+    text
+)
+{
+    if (!recordingFileHandle)
+    {
+        throw new Error(
+            "No recording file is open"
+        );
     }
-  } else {
-    recordingStatus.textContent = "Stopped with write error";
-  }
 
-  recordingFileHandle = null;
-  recordingVehicleId = null;
-  recordingVehicleName = null;
-  recordingBuffer = [];
-  bufferedCount.textContent = "0";
-  updateControlStates();
-}
+    /*
+     * createWritable() normally writes through a temporary file and
+     * commits the changes when close() succeeds.
+     *
+     * We therefore reopen + seek + append + close for every batch.
+     * This bounds RAM usage and commits every completed 5-second batch.
+     */
+    const existingFile =
+        await recordingFileHandle.getFile();
 
-function resetRecordingState() {
-  isRecording = false;
-  recordingFileHandle = null;
-  recordingVehicleId = null;
-  recordingVehicleName = null;
-  recordingBuffer = [];
-  recordingFrameCount = 0;
-  recordingWrittenCount = 0;
-  recordingFailed = false;
-  clearInterval(recordingFlushTimer);
-  recordingFlushTimer = null;
-  recordingStatus.textContent = "Idle";
-  recordingFileNameElement.textContent = "None";
-  bufferedCount.textContent = "0";
-  writtenCount.textContent = "0";
-  updateControlStates();
-}
+    const writable =
+        await recordingFileHandle.createWritable(
+            {
+                keepExistingData:
+                    true
+            }
+        );
 
-async function openRecording() {
-  if (isRecording) return;
-  recordingFileInput.value = "";
-  recordingFileInput.click();
-}
+    try
+    {
+        await writable.seek(
+            existingFile.size
+        );
 
-recordingFileInput.addEventListener("change", async () => {
-  const file = recordingFileInput.files?.[0];
-  if (file) await loadReplayFile(file);
-});
+        await writable.write(
+            text
+        );
 
-// Streaming indexer: scans the file chunk-by-chunk and stores only offsets/timestamps.
-async function loadReplayFile(file) {
-  stopReplayPlayback();
-  const generation = ++replayGeneration;
-  replayFile = file;
-  replayFileName = file.name;
-  replayEntries = [];
-  replayIndex = -1;
-  replayStatus.textContent = "Indexing recording...";
-  setReplayMode(true);
-
-  let byteOffset = 0;
-  let pendingBytes = new Uint8Array(0);
-  let header = null;
-  const reader = file.stream().getReader();
-
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (generation !== replayGeneration) { await reader.cancel(); return; }
-      if (done) break;
-
-      const combined = new Uint8Array(pendingBytes.length + value.length);
-      combined.set(pendingBytes, 0);
-      combined.set(value, pendingBytes.length);
-
-      let lineStart = 0;
-      for (let i = 0; i < combined.length; ++i) {
-        if (combined[i] !== 10) continue; // '\n'
-        let lineEnd = i;
-        if (lineEnd > lineStart && combined[lineEnd - 1] === 13) --lineEnd; // CRLF
-        const lineBytes = combined.subarray(lineStart, lineEnd);
-        const start = byteOffset + lineStart - pendingBytes.length;
-        const end = byteOffset + i + 1 - pendingBytes.length;
-        if (lineBytes.length) {
-          const record = JSON.parse(new TextDecoder().decode(lineBytes));
-          if (record.recordType === "header") header = record;
-          else if (record.recordType === "telemetry") {
-            replayEntries.push({ start, end, receivedAt: Number(record.receivedAt) || 0 });
-          }
+        await writable.close();
+    }
+    catch (error)
+    {
+        try
+        {
+            await writable.abort();
         }
-        lineStart = i + 1;
-      }
-      pendingBytes = combined.slice(lineStart);
-      byteOffset += value.length;
-      if (replayEntries.length % 5000 < 100) replayStatus.textContent = `Indexing... ${replayEntries.length.toLocaleString()} messages`;
+        catch
+        {
+        }
+
+        throw error;
+    }
+}
+
+
+function framesToJsonl(
+    frames
+)
+{
+    return (
+        frames.map(
+            frame =>
+                JSON.stringify(
+                    {
+                        recordType:
+                            "telemetry",
+
+                        frameIndex:
+                            frame.frameIndex,
+
+                        receivedAt:
+                            frame.receivedAt,
+
+                        data:
+                            frame.data
+                    }
+                )
+        ).join(
+            "\n"
+        )
+        +
+        "\n"
+    );
+}
+
+
+// ============================================================
+// Flush Current RAM Buffer
+// ============================================================
+
+function flushRecordingBuffer()
+{
+    if (
+        recordingBuffer.length === 0 ||
+        !recordingFileHandle
+    )
+    {
+        return recordingWriteChain;
     }
 
-    // Handle final non-newline-terminated record, useful for interrupted files.
-    if (pendingBytes.length) {
-      try {
-        const record = JSON.parse(new TextDecoder().decode(pendingBytes));
-        if (record.recordType === "telemetry") replayEntries.push({
-          start: file.size - pendingBytes.length,
-          end: file.size,
-          receivedAt: Number(record.receivedAt) || 0
-        });
-      } catch (_) { /* incomplete crash tail: ignore it */ }
+    /*
+     * Double-buffering:
+     * WebSocket telemetry immediately starts filling a fresh array
+     * while the old batch is serialized and committed to disk.
+     */
+    const batch =
+        recordingBuffer;
+
+    recordingBuffer =
+        [];
+
+    recordingWriteChain =
+        recordingWriteChain
+            .catch(
+                () =>
+                {
+                    /*
+                     * A previous failed batch has already been requeued.
+                     * Reset the chain so a later explicit retry can run.
+                     */
+                }
+            )
+            .then(
+                async () =>
+                {
+                    try
+                    {
+                        const text =
+                            framesToJsonl(
+                                batch
+                            );
+
+                        await appendTextToRecordingFile(
+                            text
+                        );
+
+                        console.log(
+                            `JSONL batch committed: ${batch.length} messages`
+                        );
+                    }
+                    catch (error)
+                    {
+                        /*
+                         * Put failed messages back in front, preserving order.
+                         */
+                        recordingBuffer =
+                            batch.concat(
+                                recordingBuffer
+                            );
+
+                        document.getElementById(
+                            "recordingStatus"
+                        ).textContent =
+                            "Recording write error - data kept in RAM";
+
+                        throw error;
+                    }
+                }
+            );
+
+    return recordingWriteChain;
+}
+
+
+// ============================================================
+// Start Recording
+// ============================================================
+
+async function startRecording()
+{
+    if (
+        !selectedVehicleId ||
+        isRecording
+    )
+    {
+        return;
     }
-  } catch (error) {
-    console.error("Unable to index recording", error);
-    alert(`Unable to open recording:\n${error.message}`);
-    exitReplay();
-    return;
-  }
 
-  if (!replayEntries.length) {
-    alert("The selected file contains no telemetry records.");
-    exitReplay();
-    return;
-  }
+    if (
+        !("showSaveFilePicker" in window)
+    )
+    {
+        alert(
+            "This browser does not support direct file recording. " +
+            "Use a Chromium-based browser with the File System Access API."
+        );
 
-  if (header?.vehicleId) {
-    upsertVehicle(header.vehicleId, header.vehicleName || header.vehicleId, false);
-    selectedVehicleId = header.vehicleId;
-    renderVehicleList();
-  }
+        return;
+    }
 
-  replaySlider.min = "0";
-  replaySlider.max = String(replayEntries.length - 1);
-  replaySlider.value = "0";
-  replayStatus.textContent = `${file.name} — ${replayEntries.length.toLocaleString()} messages`;
-  updateControlStates();
-  await showReplayFrame(0);
+    exitReplayMode();
+
+    const vehicle =
+        vehicles.get(
+            selectedVehicleId
+        );
+
+    recordingVehicleId =
+        selectedVehicleId;
+
+    recordingVehicleName =
+        vehicle?.vehicleName
+        ??
+        selectedVehicleId;
+
+    try
+    {
+        recordingFileHandle =
+            await window.showSaveFilePicker(
+                {
+                    suggestedName:
+                        makeRecordingFileName(),
+
+                    types:
+                        [
+                            {
+                                description:
+                                    "JSON Lines telemetry recording",
+
+                                accept:
+                                    {
+                                        "application/x-ndjson":
+                                            [
+                                                ".jsonl",
+                                                ".ndjson"
+                                            ]
+                                    }
+                            }
+                        ]
+                }
+            );
+    }
+    catch (error)
+    {
+        recordingVehicleId =
+            null;
+
+        recordingVehicleName =
+            null;
+
+        if (
+            error?.name !==
+            "AbortError"
+        )
+        {
+            console.error(
+                "Unable to choose recording file:",
+                error
+            );
+        }
+
+        return;
+    }
+
+    recordingFileName =
+        recordingFileHandle.name;
+
+    recordingStartedAt =
+        new Date()
+            .toISOString();
+
+    recordingFrameIndex =
+        0;
+
+    recordingBuffer =
+        [];
+
+    recordingWriteChain =
+        Promise.resolve();
+
+    try
+    {
+        /*
+         * Truncate an existing file selected by the user and write
+         * the header as the first committed JSONL record.
+         */
+        const writable =
+            await recordingFileHandle.createWritable();
+
+        await writable.write(
+            JSON.stringify(
+                {
+                    recordType:
+                        "header",
+
+                    formatVersion:
+                        1,
+
+                    vehicleId:
+                        recordingVehicleId,
+
+                    vehicleName:
+                        recordingVehicleName,
+
+                    startedAt:
+                        recordingStartedAt
+                }
+            )
+            +
+            "\n"
+        );
+
+        await writable.close();
+    }
+    catch (error)
+    {
+        console.error(
+            "Unable to initialize recording file:",
+            error
+        );
+
+        alert(
+            "Unable to initialize the recording file."
+        );
+
+        recordingFileHandle =
+            null;
+
+        return;
+    }
+
+    isRecording =
+        true;
+
+    recordingFlushTimer =
+        setInterval(
+            () =>
+            {
+                flushRecordingBuffer()
+                    .catch(
+                        error =>
+                        {
+                            console.error(
+                                "Periodic JSONL flush failed:",
+                                error
+                            );
+                        }
+                    );
+            },
+            RECORDING_FLUSH_INTERVAL_MS
+        );
+
+    startRecordingButton.disabled =
+        true;
+
+    stopRecordingButton.disabled =
+        false;
+
+    document.getElementById(
+        "recordingStatus"
+    ).textContent =
+        `Recording ${recordingVehicleId} - 0 messages`;
 }
 
-async function readReplayRecord(index) {
-  if (!replayFile || index < 0 || index >= replayEntries.length) return null;
-  const entry = replayEntries[index];
-  const text = await replayFile.slice(entry.start, entry.end).text();
-  return JSON.parse(text.trim());
+
+// ============================================================
+// Stop Recording
+// ============================================================
+
+async function stopRecording()
+{
+    if (!isRecording)
+    {
+        return;
+    }
+
+    /*
+     * Stop accepting new telemetry before flushing.
+     */
+    isRecording =
+        false;
+
+    if (recordingFlushTimer)
+    {
+        clearInterval(
+            recordingFlushTimer
+        );
+
+        recordingFlushTimer =
+            null;
+    }
+
+    const finishedVehicleId =
+        recordingVehicleId;
+
+    const totalFrames =
+        recordingFrameIndex;
+
+    let completed =
+        false;
+
+    try
+    {
+        await flushRecordingBuffer();
+
+        await recordingWriteChain;
+
+        if (
+            recordingBuffer.length > 0
+        )
+        {
+            /*
+             * Retry once if a previous batch was requeued.
+             */
+            await flushRecordingBuffer();
+
+            await recordingWriteChain;
+        }
+
+        const footer =
+            JSON.stringify(
+                {
+                    recordType:
+                        "footer",
+
+                    stoppedAt:
+                        new Date()
+                            .toISOString(),
+
+                    frameCount:
+                        totalFrames,
+
+                    status:
+                        "completed"
+                }
+            )
+            +
+            "\n";
+
+        await appendTextToRecordingFile(
+            footer
+        );
+
+        completed =
+            true;
+
+        document.getElementById(
+            "recordingStatus"
+        ).textContent =
+            `${finishedVehicleId}: ${totalFrames} messages recorded`;
+    }
+    catch (error)
+    {
+        console.error(
+            "Unable to finish recording:",
+            error
+        );
+
+        document.getElementById(
+            "recordingStatus"
+        ).textContent =
+            `Recording write error - ${recordingBuffer.length} messages remain in RAM`;
+
+        alert(
+            "The recording could not be completely written. " +
+            "Do not close this page if you want to retry."
+        );
+    }
+
+    if (completed)
+    {
+        recordingFileHandle =
+            null;
+
+        recordingVehicleId =
+            null;
+
+        recordingVehicleName =
+            null;
+
+        recordingBuffer =
+            [];
+
+        recordingFrameIndex =
+            0;
+
+        recordingStartedAt =
+            null;
+
+        startRecordingButton.disabled =
+            selectedVehicleId === null;
+
+        stopRecordingButton.disabled =
+            true;
+    }
 }
 
-async function showReplayFrame(index) {
-  if (!replayFile || !replayEntries.length) return;
-  index = Math.max(0, Math.min(index, replayEntries.length - 1));
-  const record = await readReplayRecord(index);
-  if (!record?.data) return;
-  replayIndex = index;
-  replaySlider.value = String(index);
-  replayPosition.textContent = `${(index + 1).toLocaleString()} / ${replayEntries.length.toLocaleString()}`;
-  displayTelemetry(record.data);
-  updateControlStates();
+
+// ============================================================
+// Handle Telemetry
+// ============================================================
+
+function handleTelemetry(
+    message
+)
+{
+    const vehicleId =
+        message.vehicleId;
+
+
+    let vehicle =
+        vehicles.get(
+            vehicleId
+        );
+
+
+    if (!vehicle)
+    {
+        vehicle =
+            {
+                vehicleId:
+                    vehicleId,
+
+                vehicleName:
+                    message.vehicleName
+                    ??
+                    vehicleId,
+
+                connected:
+                    true,
+
+                lastUpdate:
+                    null,
+
+                telemetry:
+                    null
+            };
+
+
+        vehicles.set(
+            vehicleId,
+            vehicle
+        );
+    }
+
+
+    vehicle.connected =
+        true;
+
+
+    vehicle.telemetry =
+        message.data;
+
+
+    vehicle.lastUpdate =
+        Date.now();
+
+
+    totalMessageCount++;
+
+
+    document.getElementById(
+        "messageCount"
+    ).textContent =
+        totalMessageCount;
+
+
+
+    // ========================================================
+    // RECORD EVERY MESSAGE
+    // ========================================================
+
+    if (
+        isRecording &&
+        vehicleId === recordingVehicleId
+    )
+    {
+        recordingBuffer.push(
+            {
+                frameIndex:
+                    recordingFrameIndex++,
+
+                receivedAt:
+                    message.serverReceivedAt
+                    ??
+                    Date.now(),
+
+                data:
+                    structuredClone(
+                        message.data
+                    )
+            }
+        );
+
+
+        document.getElementById(
+            "recordingStatus"
+        ).textContent =
+            `Recording ${recordingVehicleId} - ` +
+            `${recordingFrameIndex} messages`;
+    }
+
+
+
+    // ========================================================
+    // Display
+    // ========================================================
+
+    if (
+        replayRecordingId === null &&
+        vehicleId === selectedVehicleId
+    )
+    {
+        updateDashboard(
+            message.data
+        );
+    }
+
+
+    updateVehicleList();
 }
 
-function stopReplayPlayback() {
-  replayPlaying = false;
-  clearTimeout(replayTimer);
-  replayTimer = null;
-  playPauseButton.textContent = "Play";
+
+
+// ============================================================
+// Vehicle List Message
+// ============================================================
+
+function handleVehicleList(
+    serverVehicles
+)
+{
+    const serverIds =
+        new Set();
+
+
+    serverVehicles.forEach(
+        vehicleInfo =>
+        {
+            serverIds.add(
+                vehicleInfo.vehicleId
+            );
+
+
+            let vehicle =
+                vehicles.get(
+                    vehicleInfo.vehicleId
+                );
+
+
+            if (!vehicle)
+            {
+                vehicle =
+                    {
+                        vehicleId:
+                            vehicleInfo.vehicleId,
+
+                        vehicleName:
+                            vehicleInfo.vehicleName
+                            ??
+                            vehicleInfo.vehicleId,
+
+                        connected:
+                            true,
+
+                        lastUpdate:
+                            null,
+
+                        telemetry:
+                            null
+                    };
+
+
+                vehicles.set(
+                    vehicle.vehicleId,
+                    vehicle
+                );
+            }
+            else
+            {
+                vehicle.connected =
+                    true;
+
+
+                vehicle.vehicleName =
+                    vehicleInfo.vehicleName
+                    ??
+                    vehicle.vehicleId;
+            }
+        }
+    );
+
+
+    vehicles.forEach(
+        vehicle =>
+        {
+            if (
+                !serverIds.has(
+                    vehicle.vehicleId
+                )
+            )
+            {
+                vehicle.connected =
+                    false;
+            }
+        }
+    );
+
+
+    if (
+        selectedVehicleId === null &&
+        serverVehicles.length > 0
+    )
+    {
+        selectVehicle(
+            serverVehicles[0].vehicleId
+        );
+    }
+
+
+    updateVehicleList();
 }
 
-async function playNextReplayFrame() {
-  if (!replayPlaying || !replayFile) return;
-  if (replayIndex >= replayEntries.length - 1) { stopReplayPlayback(); return; }
 
-  const current = replayEntries[replayIndex];
-  const next = replayEntries[replayIndex + 1];
-  const speed = Math.max(0.01, Number(replaySpeed.value) || 1);
-  let delay = next.receivedAt > current.receivedAt ? (next.receivedAt - current.receivedAt) / speed : 0;
-  delay = Math.max(0, Math.min(delay, MAX_REPLAY_DELAY_MS));
 
-  replayTimer = setTimeout(async () => {
-    await showReplayFrame(replayIndex + 1);
-    void playNextReplayFrame();
-  }, delay);
+// ============================================================
+// Vehicle Connected
+// ============================================================
+
+function handleVehicleConnected(
+    vehicleInfo
+)
+{
+    let vehicle =
+        vehicles.get(
+            vehicleInfo.vehicleId
+        );
+
+
+    if (!vehicle)
+    {
+        vehicle =
+            {
+                vehicleId:
+                    vehicleInfo.vehicleId,
+
+                vehicleName:
+                    vehicleInfo.vehicleName
+                    ??
+                    vehicleInfo.vehicleId,
+
+                connected:
+                    true,
+
+                lastUpdate:
+                    null,
+
+                telemetry:
+                    null
+            };
+
+
+        vehicles.set(
+            vehicle.vehicleId,
+            vehicle
+        );
+    }
+    else
+    {
+        vehicle.connected =
+            true;
+
+
+        vehicle.vehicleName =
+            vehicleInfo.vehicleName
+            ??
+            vehicle.vehicleId;
+    }
+
+
+    if (
+        selectedVehicleId === null
+    )
+    {
+        selectVehicle(
+            vehicle.vehicleId
+        );
+    }
+
+
+    updateVehicleList();
 }
 
-function toggleReplayPlayback() {
-  if (!replayFile) return;
-  if (replayPlaying) { stopReplayPlayback(); return; }
-  if (replayIndex >= replayEntries.length - 1) void showReplayFrame(0);
-  replayPlaying = true;
-  playPauseButton.textContent = "Pause";
-  void playNextReplayFrame();
+
+
+// ============================================================
+// Vehicle Disconnected
+// ============================================================
+
+function handleVehicleDisconnected(
+    vehicleId
+)
+{
+    const vehicle =
+        vehicles.get(
+            vehicleId
+        );
+
+
+    if (vehicle)
+    {
+        vehicle.connected =
+            false;
+    }
+
+
+    updateVehicleList();
 }
 
-function setReplayMode(enabled) {
-  modeBadge.textContent = enabled ? "REPLAY" : "LIVE";
-  modeBadge.className = `badge ${enabled ? "replay" : "live"}`;
+
+
+// ============================================================
+// Draw Vehicle List
+// ============================================================
+
+function updateVehicleList()
+{
+    const list =
+        document.getElementById(
+            "vehicleList"
+        );
+
+
+    list.innerHTML =
+        "";
+
+
+    document.getElementById(
+        "vehicleCount"
+    ).textContent =
+        vehicles.size;
+
+
+    if (
+        vehicles.size === 0
+    )
+    {
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+
+        empty.className =
+            "no-vehicles";
+
+
+        empty.textContent =
+            "Waiting for vehicles...";
+
+
+        list.appendChild(
+            empty
+        );
+
+
+        return;
+    }
+
+
+    const sorted =
+        Array.from(
+            vehicles.values()
+        );
+
+
+    sorted.sort(
+        (a, b) =>
+        {
+            if (
+                a.vehicleId ===
+                selectedVehicleId
+            )
+            {
+                return -1;
+            }
+
+
+            if (
+                b.vehicleId ===
+                selectedVehicleId
+            )
+            {
+                return 1;
+            }
+
+
+            if (
+                a.connected !==
+                b.connected
+            )
+            {
+                return a.connected
+                    ? -1
+                    : 1;
+            }
+
+
+            return a.vehicleName.localeCompare(
+                b.vehicleName
+            );
+        }
+    );
+
+
+    sorted.forEach(
+        vehicle =>
+        {
+            const selected =
+                vehicle.vehicleId ===
+                selectedVehicleId;
+
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "vehicle-item";
+
+
+            if (selected)
+            {
+                item.classList.add(
+                    "selected"
+                );
+            }
+
+
+            item.addEventListener(
+                "click",
+                function ()
+                {
+                    selectVehicle(
+                        vehicle.vehicleId
+                    );
+                }
+            );
+
+
+            const name =
+                document.createElement(
+                    "div"
+                );
+
+
+            name.className =
+                "vehicle-name";
+
+
+            name.textContent =
+                vehicle.vehicleName;
+
+
+            item.appendChild(
+                name
+            );
+
+
+            if (selected)
+            {
+                const badge =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                badge.className =
+                    "selected-vehicle-badge";
+
+
+                badge.textContent =
+                    "SELECTED";
+
+
+                item.appendChild(
+                    badge
+                );
+            }
+
+
+            const id =
+                document.createElement(
+                    "div"
+                );
+
+
+            id.className =
+                "vehicle-id";
+
+
+            id.textContent =
+                vehicle.vehicleId;
+
+
+            item.appendChild(
+                id
+            );
+
+
+            const status =
+                document.createElement(
+                    "div"
+                );
+
+
+            status.className =
+                "vehicle-status-row";
+
+
+            const dot =
+                document.createElement(
+                    "div"
+                );
+
+
+            dot.className =
+                vehicle.connected
+                    ? "vehicle-online-dot"
+                    : "vehicle-offline-dot";
+
+
+            status.appendChild(
+                dot
+            );
+
+
+            const text =
+                document.createElement(
+                    "span"
+                );
+
+
+            if (!vehicle.connected)
+            {
+                text.textContent =
+                    "Offline";
+            }
+            else if (
+                vehicle.lastUpdate === null
+            )
+            {
+                text.textContent =
+                    "Connected";
+            }
+            else
+            {
+                const seconds =
+                    Math.floor(
+                        (
+                            Date.now() -
+                            vehicle.lastUpdate
+                        ) / 1000
+                    );
+
+
+                if (
+                    seconds < 60
+                )
+                {
+                    text.textContent =
+                        `${seconds}s ago`;
+                }
+                else
+                {
+                    text.textContent =
+                        `${Math.floor(
+                            seconds / 60
+                        )}m ago`;
+                }
+            }
+
+
+            status.appendChild(
+                text
+            );
+
+
+            item.appendChild(
+                status
+            );
+
+
+            list.appendChild(
+                item
+            );
+        }
+    );
 }
 
-function exitReplay() {
-  ++replayGeneration;
-  stopReplayPlayback();
-  replayFile = null;
-  replayFileName = null;
-  replayEntries = [];
-  replayIndex = -1;
-  replaySlider.value = "0";
-  replaySlider.max = "0";
-  replayPosition.textContent = "0 / 0";
-  replayStatus.textContent = "No recording loaded";
-  setReplayMode(false);
-  const vehicle = selectedVehicleId ? vehicles.get(selectedVehicleId) : null;
-  vehicle?.telemetry ? displayTelemetry(vehicle.telemetry) : clearDashboard();
-  updateControlStates();
+
+
+// ============================================================
+// Select Vehicle
+// ============================================================
+
+async function selectVehicle(
+    vehicleId
+)
+{
+    if (
+        selectedVehicleId ===
+        vehicleId
+    )
+    {
+        return;
+    }
+
+
+    if (isRecording)
+    {
+        const change =
+            confirm(
+                `Recording ${recordingVehicleId} is active.\n\n` +
+                `Stop recording and switch to ${vehicleId}?`
+            );
+
+
+        if (!change)
+        {
+            return;
+        }
+
+
+        await stopRecording();
+    }
+
+
+    exitReplayMode();
+
+
+    selectedVehicleId =
+        vehicleId;
+
+
+    firstPosition =
+        true;
+
+
+    const vehicle =
+        vehicles.get(
+            vehicleId
+        );
+
+
+    if (!vehicle)
+    {
+        return;
+    }
+
+
+    document.getElementById(
+        "vehicleId"
+    ).textContent =
+        vehicle.vehicleId;
+
+
+    document.getElementById(
+        "mapVehicleName"
+    ).textContent =
+        vehicle.vehicleName;
+
+
+    startRecordingButton.disabled =
+        false;
+
+
+    document.getElementById(
+        "recordingStatus"
+    ).textContent =
+        "Not recording";
+
+
+    if (
+        vehicle.telemetry
+    )
+    {
+        updateDashboard(
+            vehicle.telemetry
+        );
+    }
+    else
+    {
+        clearDashboard();
+    }
+
+
+    await refreshRecordingList();
+
+
+    updateVehicleList();
 }
 
-function updateControlStates() {
-  const selected = selectedVehicleId ? vehicles.get(selectedVehicleId) : null;
-  startRecordingButton.disabled = isRecording || !!replayFile || !selected || !selected.connected;
-  stopRecordingButton.disabled = !isRecording;
-  openRecordingButton.disabled = isRecording;
-  const hasReplay = !!replayFile && replayEntries.length > 0;
-  previousFrameButton.disabled = !hasReplay || replayIndex <= 0;
-  playPauseButton.disabled = !hasReplay;
-  nextFrameButton.disabled = !hasReplay || replayIndex >= replayEntries.length - 1;
-  exitReplayButton.disabled = !replayFile;
-  replaySpeed.disabled = !hasReplay;
-  replaySlider.disabled = !hasReplay;
+
+
+// ============================================================
+// WebSocket
+// ============================================================
+
+function connectWebSocket()
+{
+    if (
+        socket &&
+        (
+            socket.readyState ===
+                WebSocket.OPEN
+            ||
+            socket.readyState ===
+                WebSocket.CONNECTING
+        )
+    )
+    {
+        return;
+    }
+
+
+    setConnectionStatus(
+        "Connecting...",
+        "connecting"
+    );
+
+
+    socket =
+        new WebSocket(
+            WEBSOCKET_URL
+        );
+
+
+    socket.onopen =
+        function ()
+        {
+            socket.send(
+                JSON.stringify(
+                    {
+                        type:
+                            "handshake",
+
+                        role:
+                            "browser"
+                    }
+                )
+            );
+        };
+
+
+    socket.onmessage =
+        function (event)
+        {
+            let message;
+
+
+            try
+            {
+                message =
+                    JSON.parse(
+                        event.data
+                    );
+            }
+            catch
+            {
+                return;
+            }
+
+
+            switch (
+                message.type
+            )
+            {
+                case "handshake_ack":
+
+                    setConnectionStatus(
+                        "Connected",
+                        "connected"
+                    );
+
+                    break;
+
+
+                case "vehicle_list":
+
+                    handleVehicleList(
+                        message.vehicles
+                        ??
+                        []
+                    );
+
+                    break;
+
+
+                case "vehicle_connected":
+
+                    if (
+                        message.vehicle
+                    )
+                    {
+                        handleVehicleConnected(
+                            message.vehicle
+                        );
+                    }
+
+                    break;
+
+
+                case "vehicle_disconnected":
+
+                    handleVehicleDisconnected(
+                        message.vehicleId
+                    );
+
+                    break;
+
+
+                case "telemetry":
+
+                    handleTelemetry(
+                        message
+                    );
+
+                    break;
+            }
+        };
+
+
+    socket.onclose =
+        function ()
+        {
+            setConnectionStatus(
+                "Disconnected",
+                "disconnected"
+            );
+
+
+            clearTimeout(
+                reconnectTimer
+            );
+
+
+            reconnectTimer =
+                setTimeout(
+                    connectWebSocket,
+                    3000
+                );
+        };
+
+
+    socket.onerror =
+        function (error)
+        {
+            console.error(
+                "WebSocket error:",
+                error
+            );
+        };
 }
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
+
+
+// ============================================================
+// Dashboard
+// ============================================================
+
+function updateDashboard(
+    data,
+    displayTimestamp = null
+)
+{
+    document.getElementById(
+        "rawTelemetry"
+    ).textContent =
+        JSON.stringify(
+            data,
+            null,
+            2
+        );
+
+
+    document.getElementById(
+        "frameNumber"
+    ).textContent =
+        data.frameNumber
+        ??
+        "--";
+
+
+    document.getElementById(
+        "speed"
+    ).textContent =
+        data.speed !== undefined
+            ? Number(
+                data.speed
+            ).toFixed(1)
+            : "--";
+
+
+    if (
+        data.location &&
+        data.location.latitude !== undefined &&
+        data.location.longitude !== undefined
+    )
+    {
+        const latitude =
+            Number(
+                data.location.latitude
+            );
+
+
+        const longitude =
+            Number(
+                data.location.longitude
+            );
+
+
+        document.getElementById(
+            "latitude"
+        ).textContent =
+            latitude.toFixed(
+                6
+            );
+
+
+        document.getElementById(
+            "longitude"
+        ).textContent =
+            longitude.toFixed(
+                6
+            );
+
+
+        if (!vehicleMarker)
+        {
+            vehicleMarker =
+                L.marker(
+                    [
+                        latitude,
+                        longitude
+                    ]
+                ).addTo(
+                    map
+                );
+        }
+        else
+        {
+            vehicleMarker.setLatLng(
+                [
+                    latitude,
+                    longitude
+                ]
+            );
+        }
+
+
+        if (firstPosition)
+        {
+            map.setView(
+                [
+                    latitude,
+                    longitude
+                ],
+                15
+            );
+
+
+            firstPosition =
+                false;
+        }
+    }
+
+
+    updateDetectedObjects(
+        data.detectedObjects
+        ??
+        []
+    );
+
+
+    const timestamp =
+        displayTimestamp
+        ??
+        Date.now();
+
+
+    document.getElementById(
+        "lastUpdate"
+    ).textContent =
+        new Date(
+            timestamp
+        ).toLocaleTimeString();
 }
 
-startRecordingButton.addEventListener("click", () => void startRecording());
-stopRecordingButton.addEventListener("click", () => void stopRecording());
-openRecordingButton.addEventListener("click", () => void openRecording());
-previousFrameButton.addEventListener("click", () => { stopReplayPlayback(); void showReplayFrame(replayIndex - 1); });
-nextFrameButton.addEventListener("click", () => { stopReplayPlayback(); void showReplayFrame(replayIndex + 1); });
-playPauseButton.addEventListener("click", toggleReplayPlayback);
-exitReplayButton.addEventListener("click", exitReplay);
-replaySlider.addEventListener("input", () => { stopReplayPlayback(); void showReplayFrame(Number(replaySlider.value)); });
 
-// Do not attempt asynchronous final file writes during page unload; browsers do not guarantee them.
-window.addEventListener("beforeunload", (event) => {
-  if (isRecording && recordingBuffer.length) {
-    event.preventDefault();
-    event.returnValue = "";
-  }
-});
 
-initializeMap();
-clearDashboard();
-renderVehicleList();
-connectWebSocket();
+// ============================================================
+// Objects
+// ============================================================
+
+function updateDetectedObjects(
+    objects
+)
+{
+    const list =
+        document.getElementById(
+            "objectList"
+        );
+
+
+    list.innerHTML =
+        "";
+
+
+    document.getElementById(
+        "objectCount"
+    ).textContent =
+        objects.length;
+
+
+    document.getElementById(
+        "objectPanelCount"
+    ).textContent =
+        objects.length;
+
+
+    if (
+        objects.length === 0
+    )
+    {
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+
+        empty.className =
+            "no-objects";
+
+
+        empty.textContent =
+            "No objects detected";
+
+
+        list.appendChild(
+            empty
+        );
+
+
+        return;
+    }
+
+
+    objects.forEach(
+        object =>
+        {
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "object-item";
+
+
+            const header =
+                document.createElement(
+                    "div"
+                );
+
+
+            header.className =
+                "object-item-header";
+
+
+            const type =
+                document.createElement(
+                    "span"
+                );
+
+
+            type.className =
+                "object-type";
+
+
+            type.textContent =
+                object.type
+                ??
+                "unknown";
+
+
+            const id =
+                document.createElement(
+                    "span"
+                );
+
+
+            id.className =
+                "object-id";
+
+
+            id.textContent =
+                `ID ${object.id ?? "--"}`;
+
+
+            header.appendChild(
+                type
+            );
+
+
+            header.appendChild(
+                id
+            );
+
+
+            item.appendChild(
+                header
+            );
+
+
+            const coordinates =
+                document.createElement(
+                    "div"
+                );
+
+
+            coordinates.className =
+                "object-coordinates";
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "X",
+                    object.x
+                )
+            );
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "Y",
+                    object.y
+                )
+            );
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "Width",
+                    object.width
+                )
+            );
+
+
+            coordinates.appendChild(
+                createCoordinate(
+                    "Height",
+                    object.height
+                )
+            );
+
+
+            item.appendChild(
+                coordinates
+            );
+
+
+            list.appendChild(
+                item
+            );
+        }
+    );
+}
+
+
+
+function createCoordinate(
+    label,
+    value
+)
+{
+    const div =
+        document.createElement(
+            "div"
+        );
+
+
+    const labelElement =
+        document.createElement(
+            "span"
+        );
+
+
+    labelElement.className =
+        "coordinate-label";
+
+
+    labelElement.textContent =
+        `${label}: `;
+
+
+    div.appendChild(
+        labelElement
+    );
+
+
+    div.appendChild(
+        document.createTextNode(
+            value
+            ??
+            "--"
+        )
+    );
+
+
+    return div;
+}
+
+
+
+// ============================================================
+// Clear Dashboard
+// ============================================================
+
+function clearDashboard()
+{
+    document.getElementById(
+        "frameNumber"
+    ).textContent =
+        "--";
+
+
+    document.getElementById(
+        "speed"
+    ).textContent =
+        "--";
+
+
+    document.getElementById(
+        "latitude"
+    ).textContent =
+        "--";
+
+
+    document.getElementById(
+        "longitude"
+    ).textContent =
+        "--";
+
+
+    document.getElementById(
+        "lastUpdate"
+    ).textContent =
+        "--";
+
+
+    document.getElementById(
+        "rawTelemetry"
+    ).textContent =
+        "Waiting for telemetry...";
+
+
+    updateDetectedObjects(
+        []
+    );
+
+
+    /*
+     * Don't leave the previous selected vehicle's marker
+     * visible when the newly selected vehicle has no position.
+     */
+
+    if (vehicleMarker)
+    {
+        map.removeLayer(
+            vehicleMarker
+        );
+
+
+        vehicleMarker =
+            null;
+    }
+}
+
+
+
+
+
+// ============================================================
+// Recording File UI
+// ============================================================
+
+async function refreshRecordingList()
+{
+    recordingSelect.innerHTML =
+        "";
+
+    const option =
+        document.createElement(
+            "option"
+        );
+
+    if (replayFile)
+    {
+        option.value =
+            "open";
+
+        option.textContent =
+            `${replayFile.name} - ${replayFrameCount} msgs`;
+
+        loadReplayButton.disabled =
+            false;
+
+        deleteRecordingButton.disabled =
+            false;
+
+        replayLastButton.disabled =
+            false;
+    }
+    else
+    {
+        option.value =
+            "";
+
+        option.textContent =
+            "No recording opened";
+
+        loadReplayButton.disabled =
+            true;
+
+        deleteRecordingButton.disabled =
+            true;
+
+        replayLastButton.disabled =
+            true;
+    }
+
+    recordingSelect.appendChild(
+        option
+    );
+
+    /*
+     * This button is now "Open Recording".
+     */
+    saveRecordingButton.disabled =
+        false;
+}
+
+
+// ============================================================
+// Open JSONL Recording
+// ============================================================
+
+function openRecordingFile()
+{
+    recordingFileInput.value =
+        "";
+
+    recordingFileInput.click();
+}
+
+
+async function handleRecordingFileSelected()
+{
+    const file =
+        recordingFileInput.files?.[0];
+
+    if (!file)
+    {
+        return;
+    }
+
+    await loadJsonlRecording(
+        file,
+        null
+    );
+}
+
+
+async function loadJsonlRecording(
+    file,
+    fileHandle
+)
+{
+    pauseReplay();
+
+    document.getElementById(
+        "replayStatus"
+    ).textContent =
+        "Indexing recording...";
+
+    const index =
+        [];
+
+    let header =
+        null;
+
+    let footer =
+        null;
+
+    const CHUNK_SIZE =
+        1024 * 1024;
+
+    let carry =
+        new Uint8Array(
+            0
+        );
+
+    let carryStart =
+        0;
+
+    const decoder =
+        new TextDecoder();
+
+    for (
+        let chunkStart = 0;
+        chunkStart < file.size;
+        chunkStart += CHUNK_SIZE
+    )
+    {
+        const chunk =
+            new Uint8Array(
+                await file
+                    .slice(
+                        chunkStart,
+                        Math.min(
+                            file.size,
+                            chunkStart + CHUNK_SIZE
+                        )
+                    )
+                    .arrayBuffer()
+            );
+
+        const combined =
+            new Uint8Array(
+                carry.length +
+                chunk.length
+            );
+
+        combined.set(
+            carry,
+            0
+        );
+
+        combined.set(
+            chunk,
+            carry.length
+        );
+
+        const combinedStart =
+            carry.length > 0
+                ? carryStart
+                : chunkStart;
+
+        let lineStart =
+            0;
+
+        for (
+            let i = 0;
+            i < combined.length;
+            ++i
+        )
+        {
+            if (
+                combined[i] !==
+                10
+            )
+            {
+                continue;
+            }
+
+            let lineEnd =
+                i;
+
+            if (
+                lineEnd > lineStart &&
+                combined[lineEnd - 1] === 13
+            )
+            {
+                --lineEnd;
+            }
+
+            const absoluteStart =
+                combinedStart +
+                lineStart;
+
+            const absoluteEnd =
+                combinedStart +
+                i +
+                1;
+
+            if (
+                lineEnd >
+                lineStart
+            )
+            {
+                const lineText =
+                    decoder.decode(
+                        combined.subarray(
+                            lineStart,
+                            lineEnd
+                        )
+                    );
+
+                let record;
+
+                try
+                {
+                    record =
+                        JSON.parse(
+                            lineText
+                        );
+                }
+                catch (error)
+                {
+                    throw new Error(
+                        `Invalid JSONL record near byte ${absoluteStart}: ${error.message}`
+                    );
+                }
+
+                if (
+                    record.recordType ===
+                    "header"
+                )
+                {
+                    header =
+                        record;
+                }
+                else if (
+                    record.recordType ===
+                    "telemetry"
+                )
+                {
+                    index.push(
+                        {
+                            start:
+                                absoluteStart,
+
+                            end:
+                                absoluteEnd,
+
+                            receivedAt:
+                                Number(
+                                    record.receivedAt
+                                )
+                        }
+                    );
+                }
+                else if (
+                    record.recordType ===
+                    "footer"
+                )
+                {
+                    footer =
+                        record;
+                }
+            }
+
+            lineStart =
+                i + 1;
+        }
+
+        carry =
+            combined.slice(
+                lineStart
+            );
+
+        carryStart =
+            combinedStart +
+            lineStart;
+
+        document.getElementById(
+            "replayStatus"
+        ).textContent =
+            `Indexing recording... ${Math.min(
+                100,
+                Math.floor(
+                    (
+                        Math.min(
+                            file.size,
+                            chunkStart + CHUNK_SIZE
+                        )
+                        /
+                        Math.max(
+                            1,
+                            file.size
+                        )
+                    )
+                    *
+                    100
+                )
+            )}%`;
+    }
+
+    /*
+     * Accept a final valid JSONL line even if the file does not end
+     * in '\n'. This is useful for an interrupted recording.
+     */
+    if (
+        carry.length > 0
+    )
+    {
+        const lineText =
+            decoder.decode(
+                carry
+            ).trim();
+
+        if (lineText)
+        {
+            try
+            {
+                const record =
+                    JSON.parse(
+                        lineText
+                    );
+
+                if (
+                    record.recordType ===
+                    "telemetry"
+                )
+                {
+                    index.push(
+                        {
+                            start:
+                                carryStart,
+
+                            end:
+                                file.size,
+
+                            receivedAt:
+                                Number(
+                                    record.receivedAt
+                                )
+                        }
+                    );
+                }
+                else if (
+                    record.recordType ===
+                    "footer"
+                )
+                {
+                    footer =
+                        record;
+                }
+                else if (
+                    record.recordType ===
+                    "header"
+                )
+                {
+                    header =
+                        record;
+                }
+            }
+            catch
+            {
+                /*
+                 * An interrupted final partial line is ignored.
+                 * Every earlier complete line remains replayable.
+                 */
+            }
+        }
+    }
+
+    if (!header)
+    {
+        throw new Error(
+            "Recording header not found"
+        );
+    }
+
+    if (
+        index.length ===
+        0
+    )
+    {
+        throw new Error(
+            "Recording contains no telemetry messages"
+        );
+    }
+
+    replayFile =
+        file;
+
+    replayFileHandle =
+        fileHandle;
+
+    replayFrameIndex =
+        index;
+
+    replayHeader =
+        header;
+
+    replayRecordingId =
+        file.name;
+
+    replayVehicleId =
+        header.vehicleId
+        ??
+        "recorded_vehicle";
+
+    replayFrameCount =
+        index.length;
+
+    replayIndex =
+        0;
+
+    lastRecordingAvailable =
+        true;
+
+    /*
+     * Add the recorded vehicle to the existing sidebar if it is not
+     * currently connected. This preserves the original dashboard UX.
+     */
+    if (
+        !vehicles.has(
+            replayVehicleId
+        )
+    )
+    {
+        vehicles.set(
+            replayVehicleId,
+            {
+                vehicleId:
+                    replayVehicleId,
+
+                vehicleName:
+                    header.vehicleName
+                    ??
+                    replayVehicleId,
+
+                connected:
+                    false,
+
+                lastUpdate:
+                    null,
+
+                telemetry:
+                    null
+            }
+        );
+    }
+
+    selectedVehicleId =
+        replayVehicleId;
+
+    updateVehicleList();
+
+    await refreshRecordingList();
+
+    replaySlider.min =
+        0;
+
+    replaySlider.max =
+        Math.max(
+            0,
+            replayFrameCount - 1
+        );
+
+    replaySlider.value =
+        0;
+
+    replaySlider.disabled =
+        false;
+
+    playReplayButton.disabled =
+        false;
+
+    stopReplayButton.disabled =
+        false;
+
+    previousFrameButton.disabled =
+        false;
+
+    nextFrameButton.disabled =
+        false;
+
+    document.getElementById(
+        "vehicleId"
+    ).textContent =
+        replayVehicleId;
+
+    document.getElementById(
+        "mapVehicleName"
+    ).textContent =
+        header.vehicleName
+        ??
+        replayVehicleId;
+
+    setMode(
+        true
+    );
+
+    document.getElementById(
+        "replayStatus"
+    ).textContent =
+        `${replayVehicleId}: ${replayFrameCount} messages` +
+        (
+            footer
+                ? ""
+                : " (interrupted recording)"
+        );
+
+    firstPosition =
+        true;
+
+    await displayReplayFrame(
+        0
+    );
+}
+
+
+// ============================================================
+// Read One Indexed JSONL Record
+// ============================================================
+
+async function getReplayFrame(
+    index
+)
+{
+    if (
+        !replayFile ||
+        index < 0 ||
+        index >= replayFrameIndex.length
+    )
+    {
+        return null;
+    }
+
+    const entry =
+        replayFrameIndex[index];
+
+    const text =
+        await replayFile
+            .slice(
+                entry.start,
+                entry.end
+            )
+            .text();
+
+    const record =
+        JSON.parse(
+            text.trim()
+        );
+
+    return {
+        receivedAt:
+            record.receivedAt,
+
+        data:
+            record.data
+    };
+}
+
+
+// ============================================================
+// Replay Controls
+// ============================================================
+
+async function loadSelectedRecording()
+{
+    if (
+        replayFile &&
+        replayFrameCount > 0
+    )
+    {
+        firstPosition =
+            true;
+
+        setMode(
+            true
+        );
+
+        await displayReplayFrame(
+            0
+        );
+    }
+}
+
+
+async function replayLastRecording()
+{
+    await loadSelectedRecording();
+}
+
+
+async function displayReplayFrame(
+    index
+)
+{
+    if (
+        !replayFile ||
+        replayFrameCount === 0
+    )
+    {
+        return;
+    }
+
+    index =
+        Math.max(
+            0,
+            Math.min(
+                index,
+                replayFrameCount - 1
+            )
+        );
+
+    const frame =
+        await getReplayFrame(
+            index
+        );
+
+    if (!frame)
+    {
+        return;
+    }
+
+    replayIndex =
+        index;
+
+    updateDashboard(
+        frame.data,
+        frame.receivedAt
+    );
+
+    replaySlider.value =
+        index;
+
+    document.getElementById(
+        "replayStatus"
+    ).textContent =
+        `${replayVehicleId}: ${index + 1} / ${replayFrameCount}`;
+}
+
+
+function playReplay()
+{
+    if (
+        !replayFile ||
+        replayFrameCount === 0
+    )
+    {
+        return;
+    }
+
+    if (replayPlaying)
+    {
+        pauseReplay();
+
+        return;
+    }
+
+    if (
+        replayIndex >=
+        replayFrameCount - 1
+    )
+    {
+        replayIndex =
+            0;
+
+        displayReplayFrame(
+            0
+        );
+    }
+
+    replayPlaying =
+        true;
+
+    playReplayButton.textContent =
+        "Pause";
+
+    scheduleNextReplayFrame();
+}
+
+
+function pauseReplay()
+{
+    replayPlaying =
+        false;
+
+    clearTimeout(
+        replayTimer
+    );
+
+    replayTimer =
+        null;
+
+    playReplayButton.textContent =
+        "Play";
+}
+
+
+async function scheduleNextReplayFrame()
+{
+    if (!replayPlaying)
+    {
+        return;
+    }
+
+    if (
+        replayIndex >=
+        replayFrameCount - 1
+    )
+    {
+        pauseReplay();
+
+        return;
+    }
+
+    const current =
+        replayFrameIndex[
+            replayIndex
+        ];
+
+    const next =
+        replayFrameIndex[
+            replayIndex + 1
+        ];
+
+    let delay =
+        next.receivedAt -
+        current.receivedAt;
+
+    if (
+        !Number.isFinite(
+            delay
+        )
+        ||
+        delay < 1
+    )
+    {
+        delay =
+            1;
+    }
+
+    delay /=
+        Number(
+            replaySpeed.value
+        );
+
+    replayTimer =
+        setTimeout(
+            async function ()
+            {
+                if (!replayPlaying)
+                {
+                    return;
+                }
+
+                await displayReplayFrame(
+                    replayIndex + 1
+                );
+
+                scheduleNextReplayFrame();
+            },
+            delay
+        );
+}
+
+
+async function previousReplayFrame()
+{
+    pauseReplay();
+
+    if (
+        replayIndex > 0
+    )
+    {
+        await displayReplayFrame(
+            replayIndex - 1
+        );
+    }
+}
+
+
+async function nextReplayFrame()
+{
+    pauseReplay();
+
+    if (
+        replayIndex <
+        replayFrameCount - 1
+    )
+    {
+        await displayReplayFrame(
+            replayIndex + 1
+        );
+    }
+}
+
+
+async function seekReplay()
+{
+    pauseReplay();
+
+    await displayReplayFrame(
+        Number(
+            replaySlider.value
+        )
+    );
+}
+
+
+function exitReplayMode()
+{
+    pauseReplay();
+
+    replayRecordingId =
+        null;
+
+    replayIndex =
+        0;
+
+    replaySlider.value =
+        0;
+
+    replaySlider.disabled =
+        true;
+
+    playReplayButton.disabled =
+        true;
+
+    stopReplayButton.disabled =
+        true;
+
+    previousFrameButton.disabled =
+        true;
+
+    nextFrameButton.disabled =
+        true;
+
+    document.getElementById(
+        "replayStatus"
+    ).textContent =
+        replayFile
+            ? `${replayFile.name} ready`
+            : "No recording loaded";
+
+    setMode(
+        false
+    );
+
+    if (selectedVehicleId)
+    {
+        const vehicle =
+            vehicles.get(
+                selectedVehicleId
+            );
+
+        if (
+            vehicle &&
+            vehicle.telemetry
+        )
+        {
+            firstPosition =
+                true;
+
+            document.getElementById(
+                "vehicleId"
+            ).textContent =
+                vehicle.vehicleId;
+
+            document.getElementById(
+                "mapVehicleName"
+            ).textContent =
+                vehicle.vehicleName;
+
+            updateDashboard(
+                vehicle.telemetry
+            );
+        }
+    }
+}
+
+
+// ============================================================
+// Mode / Connection Status
+// ============================================================
+
+function setMode(
+    replay
+)
+{
+    const element =
+        document.getElementById(
+            "modeStatus"
+        );
+
+    if (replay)
+    {
+        element.textContent =
+            "REPLAY";
+
+        element.className =
+            "mode replay-mode";
+    }
+    else
+    {
+        element.textContent =
+            "LIVE";
+
+        element.className =
+            "mode live-mode";
+    }
+}
+
+
+function setConnectionStatus(
+    text,
+    className
+)
+{
+    const element =
+        document.getElementById(
+            "connectionStatus"
+        );
+
+    element.textContent =
+        text;
+
+    element.className =
+        `status ${className}`;
+}
+
+
+// ============================================================
+// Clear Open Recording
+// ============================================================
+
+async function deleteSelectedRecording()
+{
+    if (!replayFile)
+    {
+        return;
+    }
+
+    exitReplayMode();
+
+    replayFile =
+        null;
+
+    replayFileHandle =
+        null;
+
+    replayFrameIndex =
+        [];
+
+    replayHeader =
+        null;
+
+    replayVehicleId =
+        null;
+
+    replayFrameCount =
+        0;
+
+    lastRecordingAvailable =
+        false;
+
+    await refreshRecordingList();
+}
+
+
+function recordingSelectionChanged()
+{
+    loadReplayButton.disabled =
+        !replayFile;
+
+    deleteRecordingButton.disabled =
+        !replayFile;
+}
+
+
+// ============================================================
+// Event Listeners
+// ============================================================
+
+startRecordingButton.addEventListener(
+    "click",
+    startRecording
+);
+
+
+stopRecordingButton.addEventListener(
+    "click",
+    stopRecording
+);
+
+
+saveRecordingButton.addEventListener(
+    "click",
+    openRecordingFile
+);
+
+
+recordingFileInput.addEventListener(
+    "change",
+    handleRecordingFileSelected
+);
+
+
+deleteRecordingButton.addEventListener(
+    "click",
+    deleteSelectedRecording
+);
+
+
+recordingSelect.addEventListener(
+    "change",
+    recordingSelectionChanged
+);
+
+
+replayLastButton.addEventListener(
+    "click",
+    replayLastRecording
+);
+
+
+loadReplayButton.addEventListener(
+    "click",
+    loadSelectedRecording
+);
+
+
+playReplayButton.addEventListener(
+    "click",
+    playReplay
+);
+
+
+stopReplayButton.addEventListener(
+    "click",
+    exitReplayMode
+);
+
+
+previousFrameButton.addEventListener(
+    "click",
+    previousReplayFrame
+);
+
+
+nextFrameButton.addEventListener(
+    "click",
+    nextReplayFrame
+);
+
+
+replaySlider.addEventListener(
+    "input",
+    seekReplay
+);
+
+
+
+// ============================================================
+// Sidebar Last-Seen Refresh
+// ============================================================
+
+setInterval(
+    updateVehicleList,
+    1000
+);
+
+
+
+// ============================================================
+// Page Close Warning
+// ============================================================
+
+window.addEventListener(
+    "beforeunload",
+    function (event)
+    {
+        if (!isRecording)
+        {
+            return;
+        }
+
+        /*
+         * Completed 5-second batches have already been committed.
+         * The current in-RAM partial batch cannot be guaranteed to
+         * finish asynchronously during browser shutdown.
+         */
+        event.preventDefault();
+
+        event.returnValue =
+            "";
+    }
+);
+
+
+// ============================================================
+// Initialize
+// ============================================================
+
+async function initializeApplication()
+{
+    await refreshRecordingList();
+
+    connectWebSocket();
+}
+
+
+// ============================================================
+// Start
+// ============================================================
+
+initializeApplication();
 
