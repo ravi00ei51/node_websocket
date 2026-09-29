@@ -1,611 +1,108 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Multi-Vehicle Telemetry Dashboard
-    </title>
-
-
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
-
-
-    <link
-        rel="stylesheet"
-        href="/style.css"
-    >
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Telemetry Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
 </head>
-
-
 <body>
-
-
-<!-- =========================================================
-     Header
-     ========================================================= -->
-
 <header>
-
-    <div>
-
-        <h1>
-            Vehicle Telemetry Dashboard
-        </h1>
-
-        <div class="header-subtitle">
-            Multi-Vehicle Live Monitoring
-        </div>
-
-    </div>
-
-
-    <div class="header-status">
-
-        <div
-            id="modeStatus"
-            class="mode live-mode"
-        >
-            LIVE
-        </div>
-
-
-        <div
-            id="connectionStatus"
-            class="status disconnected"
-        >
-            Disconnected
-        </div>
-
-    </div>
-
+  <div>
+    <h1>Vehicle Telemetry Dashboard</h1>
+    <p>Live multi-vehicle telemetry and portable JSONL recording</p>
+  </div>
+  <div class="header-status">
+    <span id="modeBadge" class="badge live">LIVE</span>
+    <span id="connectionStatus" class="status disconnected">Disconnected</span>
+  </div>
 </header>
 
-
-
-<!-- =========================================================
-     Main Application
-     ========================================================= -->
-
-<div class="application-layout">
-
-
-    <!-- =====================================================
-         Vehicle Sidebar
-         ===================================================== -->
-
-    <aside class="vehicle-sidebar">
-
-
-        <div class="vehicle-sidebar-header">
-
-            <span>
-                Vehicles
-            </span>
-
-
-            <span
-                id="vehicleCount"
-                class="vehicle-count"
-            >
-                0
-            </span>
-
-        </div>
-
-
-        <div
-            id="vehicleList"
-            class="vehicle-list"
-        >
-
-            <div class="no-vehicles">
-                Waiting for vehicles...
-            </div>
-
-        </div>
-
-
-    </aside>
-
-
-
-    <!-- =====================================================
-         Dashboard
-         ===================================================== -->
-
-    <main class="container">
-
-
-        <!-- =================================================
-             Telemetry Cards
-             ================================================= -->
-
-        <section class="telemetry-grid">
-
-
-            <div class="card">
-
-                <div class="card-title">
-                    Frame Number
-                </div>
-
-                <div
-                    id="frameNumber"
-                    class="card-value"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="card-title">
-                    Speed
-                </div>
-
-                <div class="card-value">
-
-                    <span id="speed">
-                        --
-                    </span>
-
-                    <span class="unit">
-                        km/h
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="card-title">
-                    Latitude
-                </div>
-
-                <div
-                    id="latitude"
-                    class="card-value coordinate-value"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="card-title">
-                    Longitude
-                </div>
-
-                <div
-                    id="longitude"
-                    class="card-value coordinate-value"
-                >
-                    --
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="card-title">
-                    Detected Objects
-                </div>
-
-                <div
-                    id="objectCount"
-                    class="card-value"
-                >
-                    0
-                </div>
-
-            </div>
-
-
-        </section>
-
-
-
-        <!-- =================================================
-             Recording / Replay
-             ================================================= -->
-
-        <section class="control-panel">
-
-
-            <!-- =============================================
-                 Recording
-                 ============================================= -->
-
-            <div class="control-section">
-
-                <div class="control-title">
-                    Recording
-                </div>
-
-
-                <div class="button-row">
-
-                    <button
-                        id="startRecordingButton"
-                        class="button"
-                        disabled
-                    >
-                        Start Recording
-                    </button>
-
-
-                    <button
-                        id="stopRecordingButton"
-                        class="button"
-                        disabled
-                    >
-                        Stop Recording
-                    </button>
-
-
-                    <button
-                        id="saveRecordingButton"
-                        class="button"
-                        disabled
-                    >
-                        Export JSON
-                    </button>
-
-
-                    <button
-                        id="deleteRecordingButton"
-                        class="button"
-                        disabled
-                    >
-                        Delete
-                    </button>
-
-                </div>
-
-
-                <div class="control-info">
-
-                    <span id="recordingStatus">
-                        Select a vehicle
-                    </span>
-
-                </div>
-
-
-                <div class="recording-selector">
-
-                    <label for="recordingSelect">
-                        Saved:
-                    </label>
-
-
-                    <select
-                        id="recordingSelect"
-                        class="speed-select"
-                    >
-
-                        <option value="">
-                            No recordings
-                        </option>
-
-                    </select>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- =============================================
-                 Replay
-                 ============================================= -->
-
-            <div class="control-section">
-
-                <div class="control-title">
-                    Replay
-                </div>
-
-
-                <div class="button-row">
-
-                    <button
-                        id="replayLastButton"
-                        class="button"
-                        disabled
-                    >
-                        Replay Last Recording
-                    </button>
-
-
-                    <button
-                        id="loadReplayButton"
-                        class="button"
-                        disabled
-                    >
-                        Load Selected
-                    </button>
-
-
-                    <button
-                        id="previousFrameButton"
-                        class="button"
-                        disabled
-                    >
-                        ◀
-                    </button>
-
-
-                    <button
-                        id="playReplayButton"
-                        class="button"
-                        disabled
-                    >
-                        Play
-                    </button>
-
-
-                    <button
-                        id="nextFrameButton"
-                        class="button"
-                        disabled
-                    >
-                        ▶
-                    </button>
-
-
-                    <button
-                        id="stopReplayButton"
-                        class="button"
-                        disabled
-                    >
-                        Exit Replay
-                    </button>
-
-
-                    <select
-                        id="replaySpeed"
-                        class="speed-select"
-                    >
-
-                        <option value="0.25">
-                            0.25x
-                        </option>
-
-                        <option value="0.5">
-                            0.5x
-                        </option>
-
-                        <option
-                            value="1"
-                            selected
-                        >
-                            1x
-                        </option>
-
-                        <option value="2">
-                            2x
-                        </option>
-
-                        <option value="5">
-                            5x
-                        </option>
-
-                        <option value="10">
-                            10x
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="replay-slider-row">
-
-                    <input
-                        id="replaySlider"
-                        type="range"
-                        min="0"
-                        max="0"
-                        value="0"
-                        disabled
-                    >
-
-                </div>
-
-
-                <div class="control-info">
-
-                    <span id="replayStatus">
-                        No recording loaded
-                    </span>
-
-                </div>
-
-            </div>
-
-
-        </section>
-
-
-
-        <!-- =================================================
-             Map + Detected Objects
-             ================================================= -->
-
-        <section class="main-display">
-
-
-            <div class="map-panel">
-
-
-                <div class="panel-header">
-
-                    <span>
-                        Vehicle Location
-                    </span>
-
-
-                    <span
-                        id="mapVehicleName"
-                        class="panel-secondary"
-                    >
-                    </span>
-
-                </div>
-
-
-                <div class="map-content">
-
-                    <div id="map"></div>
-
-                </div>
-
-
-            </div>
-
-
-
-            <div class="object-panel">
-
-
-                <div class="object-panel-header">
-
-                    <span>
-                        Detected Objects
-                    </span>
-
-
-                    <span
-                        id="objectPanelCount"
-                        class="object-count-badge"
-                    >
-                        0
-                    </span>
-
-                </div>
-
-
-                <div
-                    id="objectList"
-                    class="object-list"
-                >
-
-                    <div class="no-objects">
-                        Waiting for detections...
-                    </div>
-
-                </div>
-
-
-            </div>
-
-
-        </section>
-
-
-
-        <!-- =================================================
-             Information
-             ================================================= -->
-
-        <section class="info-panel">
-
-
-            <div>
-
-                <span class="info-label">
-                    Vehicle:
-                </span>
-
-                <span id="vehicleId">
-                    --
-                </span>
-
-            </div>
-
-
-            <div>
-
-                <span class="info-label">
-                    Last Update:
-                </span>
-
-                <span id="lastUpdate">
-                    --
-                </span>
-
-            </div>
-
-
-            <div>
-
-                <span class="info-label">
-                    Total Messages:
-                </span>
-
-                <span id="messageCount">
-                    0
-                </span>
-
-            </div>
-
-
-        </section>
-
-
-
-        <!-- =================================================
-             Raw Telemetry
-             ================================================= -->
-
-        <section class="raw-container">
-
-            <div class="panel-header">
-                Raw Telemetry
-            </div>
-
-
-            <pre id="rawTelemetry">Waiting for telemetry...</pre>
-
-        </section>
-
-
-    </main>
-
-
-</div>
-
-
-
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-></script>
-
-
-<script src="/dashboard.js"></script>
-
-
+<main>
+  <aside class="sidebar panel">
+    <div class="section-title">
+      <h2>Vehicles</h2>
+      <span id="vehicleCount">0</span>
+    </div>
+    <div id="vehicleList" class="vehicle-list">
+      <div class="empty">Waiting for vehicles...</div>
+    </div>
+  </aside>
+
+  <section class="content">
+    <section class="panel controls-panel">
+      <div class="section-title">
+        <h2>Recording</h2>
+        <span id="recordingStatus" class="small-status">Idle</span>
+      </div>
+      <div class="button-row">
+        <button id="startRecordingButton" disabled>Start Recording</button>
+        <button id="stopRecordingButton" disabled>Stop Recording</button>
+        <button id="openRecordingButton">Open Recording</button>
+        <input id="recordingFileInput" type="file" accept=".jsonl,.ndjson,application/x-ndjson,application/json" hidden>
+      </div>
+      <div class="recording-info">
+        <span>File: <strong id="recordingFileName">None</strong></span>
+        <span>Buffered: <strong id="bufferedCount">0</strong></span>
+        <span>Written: <strong id="writtenCount">0</strong></span>
+      </div>
+      <p class="hint">All messages are buffered in RAM and appended to the selected JSONL file approximately every 5 seconds.</p>
+    </section>
+
+    <section class="panel replay-panel">
+      <div class="section-title">
+        <h2>Replay</h2>
+        <span id="replayStatus" class="small-status">No recording loaded</span>
+      </div>
+      <div class="button-row">
+        <button id="previousFrameButton" disabled>Previous</button>
+        <button id="playPauseButton" disabled>Play</button>
+        <button id="nextFrameButton" disabled>Next</button>
+        <button id="exitReplayButton" disabled>Exit Replay</button>
+        <select id="replaySpeed" disabled>
+          <option value="0.25">0.25x</option>
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="5">5x</option>
+          <option value="10">10x</option>
+        </select>
+      </div>
+      <div class="replay-position">
+        <input id="replaySlider" type="range" min="0" max="0" value="0" disabled>
+        <span id="replayPosition">0 / 0</span>
+      </div>
+    </section>
+
+    <section class="telemetry-grid">
+      <div class="telemetry-card"><span>Frame</span><strong id="frameNumber">--</strong></div>
+      <div class="telemetry-card"><span>Speed</span><strong id="speed">--</strong></div>
+      <div class="telemetry-card"><span>Latitude</span><strong id="latitude">--</strong></div>
+      <div class="telemetry-card"><span>Longitude</span><strong id="longitude">--</strong></div>
+      <div class="telemetry-card"><span>Objects</span><strong id="objectCount">--</strong></div>
+    </section>
+
+    <section class="main-display">
+      <div class="panel map-panel">
+        <div class="section-title"><h2>Vehicle Location</h2></div>
+        <div id="map"></div>
+      </div>
+      <div class="panel objects-panel">
+        <div class="section-title"><h2>Detected Objects</h2></div>
+        <div id="objectList" class="object-list"><div class="empty">No telemetry</div></div>
+      </div>
+    </section>
+
+    <section class="panel raw-panel">
+      <div class="section-title"><h2>Raw Telemetry</h2></div>
+      <pre id="rawTelemetry">Waiting for telemetry...</pre>
+    </section>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="dashboard.js"></script>
 </body>
-
 </html>
+
